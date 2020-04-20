@@ -1,6 +1,8 @@
 # git files
 .gitattributes export-ignore
 .gitignore export-ignore
+.git export-ignore
+CNAME export-ignore
 
 # Docs
 /doc export-ignore

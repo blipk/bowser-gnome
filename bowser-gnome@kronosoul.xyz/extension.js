@@ -289,6 +289,7 @@ function spawnUnmatchedURIDialog() {
     let dialogStyle = { styleClass: 'browser-dialog', destroyOnClose: true };
     let buttonStyles = [{ label: "Cancel", key: uiUtils.Clutter.KEY_Escape, style_class: 'browser-dialog-buttons' }];
     let createRuleDialog = new uiUtils.ObjectEditorDialog(dialogInfoTextStyle, (returnObject) => {
+            dev.log(returnObject)
             if (!returnObject.ruleCreated) Me.URIs.shift();
             if (Me.URIs.length > 0) spawnUnmatchedURIDialog(Me.URIs);
             return;

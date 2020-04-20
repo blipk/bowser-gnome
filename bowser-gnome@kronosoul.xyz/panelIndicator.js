@@ -161,28 +161,7 @@ var BowserIndicator = GObject.registerClass({
         menuItem.buttonPressId = menuItem.connect('button_press_event', () => {this._preferenceBrowserMenuRefresh(menuItem);} );
 
         // Create iconbuttons on MenuItem
-        let editable = { searchText: menuItem.prefkey };
-        Object.assign(editable, JSON.parse(JSON.stringify(menuItem.prefvalue)));
-        let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
-        let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}, {defaultBrowser: ' ', hidden: true}];
-        let buttonStyles = [ { label: "Cancel", key: uiUtils.Clutter.KEY_Escape }, { label: "Done", default: true } ];
-        uiUtils.createIconButton(menuItem, 'document-edit-symbolic', () => {
-            let editRuleDialog = new uiUtils.ObjectEditorDialog("Editing Rule "+menuItem.nameText, (returnObject) => {
-                returnObject.searchText = returnObject.searchText.trim();
-                if (returnObject.searchText == '') return;
-                if (menuItem.prefkey == returnObject.searchText) { //No name change, which is the key
-                    Me.config.uriPrefs[menuItem.prefkey].uriOptions = returnObject.uriOptions;
-                } else {    // Can probably do this if the name didn't change but will mess up menu ordering
-                    Me.config.uriPrefs[returnObject.searchText] = Object();
-                    Me.config.uriPrefs[returnObject.searchText].uriOptions = returnObject.uriOptions;
-                    Me.config.uriPrefs[returnObject.searchText].defaultBrowser = menuItem.prefvalue.defaultBrowser;
-                    this._prefMenuItemRemoveEntry(menuItem, false);
-                }
-                Me.saveConfiguration();
-                uiUtils.showUserFeedbackMessage("Changes saved.");
-            }, editable, editables, buttonStyles);
-        });
-
+        uiUtils.createIconButton(menuItem, 'document-edit-symbolic', () => {this._editRule(menuItem)});
         uiUtils.createIconButton(menuItem, 'edit-delete-symbolic', () => {this._prefMenuItemRemoveEntry(menuItem); this._refreshMenu();});
         let icon = Me.config.browserApps[menuItem.prefvalue.defaultBrowser][3] ? Me.config.browserApps[menuItem.prefvalue.defaultBrowser][3] : 'web-browser-symbolic';
         menuItem.icon.icon_name = icon;
@@ -278,13 +257,39 @@ var BowserIndicator = GObject.registerClass({
         this._refreshMenu();
         } catch(e) { dev.log(e); }
     }
+    _editRule(menuItem) {
+        try {
+        let editable = { searchText: menuItem.prefkey };
+        Object.assign(editable, JSON.parse(JSON.stringify(menuItem.prefvalue)));
+        let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
+        let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}, {defaultBrowser: ' ', hidden: true}];
+        let buttonStyles = [ { label: "Cancel", key: uiUtils.Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
+
+        let editRuleDialog = new uiUtils.ObjectEditorDialog("Editing Rule "+menuItem.nameText, (returnObject) => {
+            if (!returnObject) return;
+            returnObject.searchText = returnObject.searchText.trim();
+            if (returnObject.searchText == '') return;
+            if (menuItem.prefkey == returnObject.searchText) { //No name change, which is the key
+                Me.config.uriPrefs[menuItem.prefkey].uriOptions = returnObject.uriOptions;
+            } else {    // Can probably do this if the name didn't change but will mess up menu ordering
+                Me.config.uriPrefs[returnObject.searchText] = Object();
+                Me.config.uriPrefs[returnObject.searchText].uriOptions = returnObject.uriOptions;
+                Me.config.uriPrefs[returnObject.searchText].defaultBrowser = menuItem.prefvalue.defaultBrowser;
+                this._prefMenuItemRemoveEntry(menuItem, false);
+            }
+            Me.saveConfiguration();
+            uiUtils.showUserFeedbackMessage("Changes saved.");
+        }, editable, editables, buttonStyles);
+        } catch(e) { dev.log(e); }
+    }
     _newRule() {
         try {
         let editable = {'searchText': '', uriOptions: {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false}};
         let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
         let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}];
-        let buttonStyles = [ { label: "Cancel", key: uiUtils.Clutter.KEY_Escape }, { label: "Done", default: true } ];
+        let buttonStyles = [ { label: "Cancel", key: uiUtils.Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
         let createRuleDialog = new uiUtils.ObjectEditorDialog("Create New Rule ", (returnObject) => {
+            if (!returnObject) return;
             returnObject.searchText = returnObject.searchText.trim();
             if (returnObject.searchText == '') return;
             Me.config.uriPrefs[returnObject.searchText] = {

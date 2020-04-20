@@ -123,7 +123,6 @@ var ObjectEditorDialog = GObject.registerClass({
         buttons.forEach(function (button, i) {
             if (button.action) button.action = button.action.bind(this);
             else button.action = this.close.bind(this);
-            if (button.key == Clutter.KEY_Escape) button.action = this.close.bind(this, true);
             
             this.buttons[i] = this.addButton(button);
             this.buttons[i].set_reactive(true);
@@ -336,11 +335,11 @@ var ObjectEditorDialog = GObject.registerClass({
         this._errorBox.hide();
         this._inputError = false;
         super.open(global.get_current_time(), true);
-        this._focusElement.grab_key_focus();
+        if (this._focusElement) this._focusElement.grab_key_focus();
     }
     close(cancel = false, parent = null) {
         try {
-        if (cancel != true) this._callback(this.returnObject);
+        this._callback(this.returnObject);
         super.close();
         } catch(e) { dev.log(e); }
     }
