@@ -24,14 +24,13 @@ chmod +x _install.sh && ./_install.sh
 ### Usage
 ![Menu Guide](doc/BowserMenuGuide.png?raw=true "Bowser Menu Guide")
 
-If the ```Create rules on new links``` option is on, you will be able to choose from a list of your web browsers when you open an unrecognized website.<br>
-The web browser you choose will be the default for that website from now on.<br>
+If the ```Create rules on new links``` option is on, you will be able to choose from a list of your web browsers when you open an unrecognized website. The web browser you choose will be the default for that website from now on.<br>
 
 ![Dialog Guide](doc/BowserDialogGuide.png?raw=true "Bowser Dialog Guide")
 
 When creating or editing rules, you can choose which part/s of a web address to check them against. You can also make this selection on the new link dialog. The default is just the website name.<br>
 
-![Edit Rule Guide](doc/BowserCreateRuleGuide.png?raw=true "Bowser Create Rule Guide") ![Edit Rule Guide](doc/BowserEditRuleGuide.png?raw=true "Bowser Edit Rule Guide")
+![Create and Edit Rules Guide](doc/BowserRulesGuide.png?raw=true "Bowser Create and Edit Rules Guide")
 
 
 ### Support
