@@ -8,7 +8,7 @@ Create rules to open specific websites in specific web browsers.
 ### Installation
 
 ###### Gnome extensions website
-<https://extensions.gnome.org/extension/1583/worksets/>
+<https://extensions.gnome.org/extension/2989/bowser-gnome-extension/>
 
 ###### Git
 ``` bash
