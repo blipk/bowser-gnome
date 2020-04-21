@@ -4,7 +4,7 @@
 .git export-ignore
 CNAME export-ignore
 
-# Docs
+# docs
 /doc export-ignore
 
 # general text files
@@ -12,3 +12,6 @@ CNAME export-ignore
 *readme.md export-ignore
 *README.md export-ignore
 *README export-ignore
+
+# project files
+debug.log export-ignore

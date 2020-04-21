@@ -89,7 +89,7 @@ function _checkBowser() {
     else Me.PYBOWSER = true;
     
     if (!fileUtils.checkExists([fileUtils.PYBOWSER_CONF_FILE])) makeConfiguration();
-    loadConfiguration()
+    loadConfiguration();
     } catch(e) { dev.log(e); }
 }
 function _installbowser() { 
