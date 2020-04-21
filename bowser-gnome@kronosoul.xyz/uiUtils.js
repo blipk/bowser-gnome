@@ -99,7 +99,6 @@ var ObjectEditorDialog = GObject.registerClass({
         defaults = { style_class: 'object-dialog-label', text: _((dialogInfoTextStyle.text || dialogInfoTextStyle).toString()), x_align: St.Align.START, y_align: St.Align.START } ;
         dialogInfoTextStyle = (typeof dialogInfoTextStyle == 'string') ? defaults : {...defaults, ...dialogInfoTextStyle };
         let stLabelUText = new St.Label(dialogInfoTextStyle);
-
         dialogInfoTextStyle.x_fill = true;
         if (dialogInfoTextStyle.text != '') this.contentLayout.add(stLabelUText, dialogInfoTextStyle);
 
@@ -113,7 +112,6 @@ var ObjectEditorDialog = GObject.registerClass({
         this._errorMessage.clutter_text.line_wrap = true;
         this._errorBox.add(this._errorMessage, { expand: true, x_align: St.Align.START, x_fill: false, y_align: St.Align.MIDDLE, y_fill: false });
         this._errorBox.hide();
-    
 
         //Action buttons
         this.buttons = Array();

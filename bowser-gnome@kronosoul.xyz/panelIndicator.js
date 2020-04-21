@@ -53,12 +53,12 @@ var BowserIndicator = GObject.registerClass({
 
         // Set up menu box to build into
         let hbox = new St.BoxLayout({ style_class: 'panel-status-menu-box bowser-gnome-indicator-hbox' });
-        this.icon = new St.Icon({ icon_name: INDICATOR_ICON, style_class: 'system-status-icon bowser-gnome-indicator-icon' });
+        this.icon = new St.Icon({ icon_name: INDICATOR_ICON, style_class: 'system-status-icon bowser-gnome-indicator-icon', opacity: 140 });
         hbox.add_child(this.icon);
-        let buttonText = new St.Label(    {text: (''), y_align: Clutter.ActorAlign.CENTER }   );
-        hbox.add_child(buttonText);
+        //let buttonText = new St.Label(    {text: (''), y_align: Clutter.ActorAlign.CENTER }   );
+        //hbox.add_child(buttonText);
         this.actor.add_child(hbox);
-        
+
         //Build our menu
         this._buildMenu();
         this._refreshMenu()
