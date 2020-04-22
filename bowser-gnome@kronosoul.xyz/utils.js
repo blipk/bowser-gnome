@@ -51,6 +51,7 @@ var isEmpty = function (v) {
                         : Boolean(v);
 }
 
+if (!Object.prototype.hasOwnProperty('forEachEntry')) {
 Object.defineProperty(Object.prototype, 'forEachEntry', {
     value: function (callback, thisArg, recursive = false, recursiveIndex = 0) {
         if (this === null) throw new TypeError('Not an object');
@@ -77,12 +78,15 @@ Object.defineProperty(Object.prototype, 'forEachEntry', {
         }, this);
     }
 });
+}
 
+if (!Object.prototype.hasOwnProperty('filter')) {
 Object.defineProperty(Object.prototype, 'filter', {
     value: function (predicate) {
         return Object.fromEntries(Object.entries(this).filter(predicate));
     }
 });
+}
 
 function splitURI(inURI) {
     try {
