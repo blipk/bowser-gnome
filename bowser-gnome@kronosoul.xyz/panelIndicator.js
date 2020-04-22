@@ -93,7 +93,7 @@ var BowserIndicator = GObject.registerClass({
         // Add separator
         this.menu.addMenuItem(new popupMenu.PopupSeparatorMenuItem());
 
-        // Menu sections for Bowser Preferences/Rules
+        // Menu section for Bowser Preferences/Rules
         this.preferencesSection = new popupMenu.PopupMenuSection();
         this.scrollViewPreferencesMenuSection = new popupMenu.PopupMenuSection();
         let preferencesScrollView = new St.ScrollView({
@@ -168,8 +168,8 @@ var BowserIndicator = GObject.registerClass({
 
         //Add to list
         menuItem.prefBrowsersMenuItems = [];
-        this._preferenceBrowserMenuRefresh(menuItem)
-        this.preferencesSection.addMenuItem(menuItem, 0)
+        this._preferenceBrowserMenuRefresh(menuItem);
+        this.preferencesSection.addMenuItem(menuItem, 0);
         } catch(e) { dev.log(e); }
     }
     _preferenceBrowserMenuRefresh(menuItem) {
@@ -197,7 +197,6 @@ var BowserIndicator = GObject.registerClass({
                     menuItem.prefBrowsersMenuItems[i].setOrnament(popupMenu.Ornament.DOT) : menuItem.prefBrowsersMenuItems[i].setOrnament(popupMenu.Ornament.NONE);
             menuItem.menu.addMenuItem(menuItem.prefBrowsersMenuItems[i]);
         }, this);
-
     }
     _defaultBrowsersSubMenuRefresh(nameOnly = false) {
         // Change name and icon to current default
