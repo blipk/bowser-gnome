@@ -340,13 +340,15 @@ function makeConfiguration() {
 }
 
 function detectWebBrowsers() {
-    try{       
-    let appPath = '/usr/share/applications/'
+    try{
+    let installedApps = []
     let userAppPath = fileUtils.USER_DATA_DIR+'/applications/'
-    let snapcraftAppPath = '/var/lib/snapd/desktop/applications/';
-    installedApps = fileUtils.enumarateDirectoryChildren(appPath);
-    installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(userAppPath));
-    if (fileUtils.checkExists(snapcraftAppPath)) installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(snapcraftAppPath));
+    if (fileUtils.checkExists(userAppPath)) installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(userAppPath));
+
+    fileUtils.SYS_DATA_DIRS.forEach(function(dir) {
+        dir += "/applications/"
+        if (fileUtils.checkExists(dir)) installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(dir));
+    }, this);
 
     let tmpbrowserApps = {};
     let currentBrowser = getxdgDefaultBrowser();
