@@ -363,13 +363,13 @@ function detectWebBrowsers() {
         let catLoc = contents.indexOf("Categories=");
 
         if (catLoc > -1) {
-            cats = contents.substring(catLoc, contents.indexOf("\n", contents.indexOf("Categories=")));
+            let cats = contents.substring(catLoc, contents.indexOf("\n", contents.indexOf("Categories=")));
             if (cats.indexOf("WebBrowser") > -1) {
                 if(app.fullname.indexOf(currentBrowser) > -1) currentBrowser = app.fullname;
-                nameLoc = contents.indexOf("Name=");
-                execLoc = contents.indexOf("Exec=");
-                mimesLoc = contents.indexOf("MimeType=");
-                iconLoc = contents.indexOf("Icon=");
+                let nameLoc = contents.indexOf("Name=");
+                let execLoc = contents.indexOf("Exec=");
+                let mimesLoc = contents.indexOf("MimeType=");
+                let iconLoc = contents.indexOf("Icon=");
 
                 tmpbrowserApps[fullAppPath] = [  
                     contents.substring(nameLoc+5, contents.indexOf("\n", nameLoc)),
