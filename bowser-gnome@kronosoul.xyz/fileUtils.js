@@ -72,6 +72,7 @@ function enumarateDirectoryChildren(directory=CONF_DIR, returnFiles=true, return
     if (!directoryFile.query_exists(null)) throw Error(directory+' not found');
     let children = directoryFile.enumerate_children('standard::name,standard::type', Gio.FileQueryInfoFlags.NONE, null);
     
+    let fileIterator;
     while ((fileIterator = children.next_file(null)) != null) {
         let type = fileIterator.get_file_type();
         let name = fileIterator.get_name();
