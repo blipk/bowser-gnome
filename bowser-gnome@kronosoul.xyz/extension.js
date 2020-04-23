@@ -343,9 +343,11 @@ function detectWebBrowsers() {
     try{       
     let appPath = '/usr/share/applications/'
     let userAppPath = fileUtils.USER_DATA_DIR+'/applications/'
-    installedApps = fileUtils.enumarateDirectoryChildren(appPath)
-    installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(userAppPath))
-    
+    let snapcraftAppPath = '/var/lib/snapd/desktop/applications/';
+    installedApps = fileUtils.enumarateDirectoryChildren(appPath);
+    installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(userAppPath));
+    if (fileUtils.checkExists(snapcraftAppPath)) installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(snapcraftAppPath));
+
     let tmpbrowserApps = {};
     let currentBrowser = getxdgDefaultBrowser();
     
