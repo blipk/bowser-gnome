@@ -107,12 +107,10 @@ var BowserIndicator = GObject.registerClass({
         this.menu.addMenuItem(new popupMenu.PopupSeparatorMenuItem());
         
         // Prefs menu button menu
-        let settingsMenuItem = new popupMenu.PopupSubMenuMenuItem('', true);
-        settingsMenuItem.nameText = "New Rule";
-        settingsMenuItem.icon.icon_name = 'bookmark-new-symbolic';
+        let settingsMenuItem = new popupMenu.PopupImageMenuItem('New Rule', 'bookmark-new-symbolic');
+        settingsMenuItem.label.set_x_expand(true);
         this.menu.settingsMenuItem = settingsMenuItem;
         this.menu.addMenuItem(settingsMenuItem);
-        this._prefMenuItemSetEntryLabel(settingsMenuItem);
         settingsMenuItem.connect('button_press_event', () => { this._newRule(); });
 
         if (Me.PYBOWSER) uiUtils.createIconButton(settingsMenuItem, 'document-properties-symbolic', () => {Me.openBowser();});
