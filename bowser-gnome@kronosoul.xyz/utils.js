@@ -80,8 +80,8 @@ Object.defineProperty(Object.prototype, 'forEachEntry', {
 });
 }
 
-if (!Object.prototype.hasOwnProperty('filter')) {
-Object.defineProperty(Object.prototype, 'filter', {
+if (!Object.prototype.hasOwnProperty('filterObj')) {
+Object.defineProperty(Object.prototype, 'filterObj', {
     value: function (predicate) {
         return Object.fromEntries(Object.entries(this).filter(predicate));
     }
