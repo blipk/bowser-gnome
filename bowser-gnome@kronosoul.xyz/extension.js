@@ -21,7 +21,7 @@
 // External imports
 const Main = imports.ui.main;
 const ExtensionSystem = imports.ui.extensionSystem;
-const { Meta, GLib, Gio } = imports.gi;
+const { Meta, GLib, Gio, Clutter, St } = imports.gi;
 const { extensionUtils, util } = imports.misc;
 const GioSSS = Gio.SettingsSchemaSource;
 const Gettext = imports.gettext;
@@ -101,7 +101,7 @@ function _installbowser() {
     // Create and install XDG Dekstop file
     fileUtils.saveRawToFile(BOWSERG_DESKTOP_FILE, 'bowser-gnome.desktop', fileUtils.CONF_DIR);
     if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE])) 
-        fileUtils.GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
+        GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
 
     if (getxdgDefaultBrowser() != 'bowser-gnome.desktop') setxdgDefaultBrowser('bowser-gnome.desktop');
 
@@ -250,7 +250,7 @@ function spawnUnmatchedURIDialog() {
     uriOptionsEditables.push(Object.assign({path: splitURI['path'] || ' ', hidden: (splitURI['path']=='')}, uriOptionsEditables[0]));
     uriOptionsEditables.push(Object.assign({query: splitURI['query'] || ' ', hidden: (splitURI['query']=='')}, uriOptionsEditables[0]));
     uriOptionsEditables.push(Object.assign({fragment: splitURI['fragment'] || ' ', hidden: (splitURI['fragment']=='')}, uriOptionsEditables[0]));
-    editables.push({uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables, boxStyle: {style_class: 'browser-uri-box', reactive: true, can_focus: true, x_expand: true, y_expand: true, x_align: uiUtils.Clutter.ActorAlign.CENTER, y_align: uiUtils.Clutter.ActorAlign.FILL}})
+    editables.push({uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables, boxStyle: {style_class: 'browser-uri-box', reactive: true, can_focus: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.FILL}})
 
     Me.config.browserApps.forEachEntry(function(browserAppKey, browserAppValue, i){
         editable[browserAppKey] = browserAppValue[0]
@@ -258,8 +258,8 @@ function spawnUnmatchedURIDialog() {
         editables[i+1] = {[browserAppKey]: browserAppValue[0],
                         iconStyle: {style_class: 'browser-label-icon', icon_size: 42, icon_name: browserAppValue[3] ? browserAppValue[3] : 'web-browser-sybmolic'},
                         labelOnly: true,
-                        labelStyle: {style_class: 'browser-label', x_align: uiUtils.St.Align.START, y_align: uiUtils.St.Align.MIDDLE},
-                        boxStyle: {style_class: 'browser-box', reactive: true, can_focus: true, x_expand: true, y_expand: true, x_align: uiUtils.Clutter.ActorAlign.FILL, y_align: uiUtils.Clutter.ActorAlign.FILL},
+                        labelStyle: {style_class: 'browser-label', x_align: St.Align.START, y_align: St.Align.MIDDLE},
+                        boxStyle: {style_class: 'browser-box', reactive: true, can_focus: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL},
                         };
 
         editables[i+1].boxClickCallback = function(i) {
@@ -288,9 +288,9 @@ function spawnUnmatchedURIDialog() {
         };
     }, this);
 
-    let dialogInfoTextStyle = { style_class: 'object-dialog-label', text: '', x_align: uiUtils.St.Align.MIDDLE, y_align: uiUtils.St.Align.START }
+    let dialogInfoTextStyle = { style_class: 'object-dialog-label', text: '', x_align: St.Align.MIDDLE, y_align: St.Align.START }
     let dialogStyle = { styleClass: 'browser-dialog', destroyOnClose: true };
-    let buttonStyles = [{ label: "Cancel", key: uiUtils.Clutter.KEY_Escape, style_class: 'browser-dialog-buttons' }];
+    let buttonStyles = [{ label: "Cancel", key: Clutter.KEY_Escape, style_class: 'browser-dialog-buttons' }];
     let createRuleDialog = new uiUtils.ObjectEditorDialog(dialogInfoTextStyle, (returnObject) => {
             if (!returnObject.ruleCreated) Me.URIs.shift();
             if (Me.URIs.length > 0) spawnUnmatchedURIDialog(Me.URIs);

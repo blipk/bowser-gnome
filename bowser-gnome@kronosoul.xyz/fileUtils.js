@@ -30,25 +30,25 @@ const utils = Me.imports.utils;
 const dev = Me.imports.devUtils;
 
 // Directory and file paths for resources
-const USER_CONF_DIR = GLib.get_user_config_dir();
-const USER_CACHE_DIR = GLib.get_user_cache_dir();
-const USER_DATA_DIR = GLib.get_user_data_dir();
-const SYS_DATA_DIRS = GLib.get_system_data_dirs();
-const INSTALL_DIR = GLib.build_pathv('/', [USER_DATA_DIR, 'gnome-shell', 'extensions', Me.uuid]);
-const RES_DIR = GLib.build_pathv('/', [INSTALL_DIR, 'res'])
-const CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
-const PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
+var USER_CONF_DIR = GLib.get_user_config_dir();
+var USER_CACHE_DIR = GLib.get_user_cache_dir();
+var USER_DATA_DIR = GLib.get_user_data_dir();
+var SYS_DATA_DIRS = GLib.get_system_data_dirs();
+var INSTALL_DIR = GLib.build_pathv('/', [USER_DATA_DIR, 'gnome-shell', 'extensions', Me.uuid]);
+var RES_DIR = GLib.build_pathv('/', [INSTALL_DIR, 'res'])
+var CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
+var PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
-const URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
-const RES_PNG_ICON_FILE =  GLib.build_filenamev([CONF_DIR, 'bowser.png']);
-const RES_SVG_ICON_FILE = GLib.build_filenamev([CONF_DIR, 'bowser.svg']);
-const PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
-const SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
+var URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
+var RES_PNG_ICON_FILE =  GLib.build_filenamev([CONF_DIR, 'bowser.png']);
+var RES_SVG_ICON_FILE = GLib.build_filenamev([CONF_DIR, 'bowser.svg']);
+var PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
+var SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
 
-const DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser-gnome.desktop']);
-const PYBOWSER_DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser.desktop']);
-const PYBOWSER_CONF_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.conf']);
-const PYBOWSER_EXEC_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.py']);
+var DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser-gnome.desktop']);
+var PYBOWSER_DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser.desktop']);
+var PYBOWSER_CONF_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.conf']);
+var PYBOWSER_EXEC_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.py']);
 
 function checkExists(path) {
     let result = false;
