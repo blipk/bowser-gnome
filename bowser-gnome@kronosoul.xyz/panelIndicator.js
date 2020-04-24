@@ -260,7 +260,7 @@ var BowserIndicator = GObject.registerClass({
         Object.assign(editable, JSON.parse(JSON.stringify(menuItem.prefvalue)));
         let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
         let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}, {defaultBrowser: ' ', hidden: true}];
-        let buttonStyles = [ { label: "Cancel", key: uiUtils.Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
+        let buttonStyles = [ { label: "Cancel", key: Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
 
         let editRuleDialog = new uiUtils.ObjectEditorDialog("Editing Rule "+menuItem.nameText, (returnObject) => {
             if (!returnObject) return;
@@ -284,7 +284,7 @@ var BowserIndicator = GObject.registerClass({
         let editable = {'searchText': '', uriOptions: {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false}};
         let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
         let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}];
-        let buttonStyles = [ { label: "Cancel", key: uiUtils.Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
+        let buttonStyles = [ { label: "Cancel", key: Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
         let createRuleDialog = new uiUtils.ObjectEditorDialog("Create New Rule ", (returnObject) => {
             if (!returnObject) return;
             returnObject.searchText = returnObject.searchText.trim();
