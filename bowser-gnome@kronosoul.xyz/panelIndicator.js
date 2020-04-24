@@ -21,7 +21,7 @@
 // External imports
 const Gettext = imports.gettext;
 const Main = imports.ui.main;
-const { popupMenu, panelMenu } = imports.ui;
+const { popupMenu, panelMenu, boxpointer } = imports.ui;
 const { GObject, St, Clutter } = imports.gi;
 const Util = imports.misc.util;
 const _ = Gettext.domain('bowser-gnome').gettext;
@@ -189,7 +189,7 @@ var BowserIndicator = GObject.registerClass({
                 uiUtils.showUserFeedbackMessage(menuItem.nameText + ' will now open with ' + name, true)
                 this._preferenceBrowserMenuRefresh(menuItem)
                 menuItem.setSubmenuShown(false);
-                menuItem.menu.itemActivated(BoxPointer.PopupAnimation.NONE);
+                menuItem.menu.itemActivated(boxpointer.PopupAnimation.NONE);
             });
             (menuItem.prefvalue.defaultBrowser == browserAppKey) ? 
                     menuItem.prefBrowsersMenuItems[i].setOrnament(popupMenu.Ornament.DOT) : menuItem.prefBrowsersMenuItems[i].setOrnament(popupMenu.Ornament.NONE);
@@ -219,7 +219,7 @@ var BowserIndicator = GObject.registerClass({
                 Me.saveConfiguration();
                 uiUtils.showUserFeedbackMessage(name + ' is now your default browser.', true);
                 this._defaultBrowsersSubMenuRefresh();
-                this.menu.itemActivated(BoxPointer.PopupAnimation.NONE);
+                this.menu.itemActivated(boxpointer.PopupAnimation.NONE);
             });
             (Me.config.defaultBrowser == browserAppKey) ? this.webbrowsersMenuItems[i].setOrnament(popupMenu.Ornament.CHECK) : this.webbrowsersMenuItems[i].setOrnament(popupMenu.Ornament.NONE);
             //uiUtils.createIconButton(this.webbrowsersMenuItems[i], icon, () => {});
@@ -229,7 +229,7 @@ var BowserIndicator = GObject.registerClass({
         this.detectWebBrowserMenuButton = new popupMenu.PopupImageMenuItem(_("Scan Installed Browsers"), "bowser");
         this.detectWebBrowserMenuButton.connect('activate', () => {
             Me.detectWebBrowsers()
-            this.menu.itemActivated(BoxPointer.PopupAnimation.NONE);
+            this.menu.itemActivated(boxpointer.PopupAnimation.NONE);
         });
         this.detectWebBrowserMenuButton.setOrnament(popupMenu.Ornament.DOT)
         //uiUtils.createIconButton(this.detectWebBrowserMenuButton , 'web-browser-sybmolic', () => {});

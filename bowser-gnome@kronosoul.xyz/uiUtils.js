@@ -30,7 +30,6 @@ const _ = Gettext.domain('bowser-gnome').gettext;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const { utils, fileUtils } = Me.imports;
 const dev = Me.imports.devUtils;
-const scopeName = "uiUtils";
 
 //For adding IconButtons on to PanelMenu.MenuItem buttons or elsewhere
 function createIconButton (parentItem, iconNameURI, onClickFn, options) { //St.Side.RIGHT
