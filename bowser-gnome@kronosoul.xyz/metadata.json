@@ -1,7 +1,7 @@
 {"uuid": "bowser-gnome@kronosoul.xyz",
 "name": "Bowser Gnome Extension",
 "original-author": "adpl@kronosoul.xyz", 
-"description": "Create rules to open specific websites in specific web browsers.",
+"description": "Create rules to open specific websites in specific web browsers for links clicked in any application on your computer. (emails, chat etc)",
 "settings-schema": "org.gnome.shell.extensions.bowser-gnome", 
 "url": "https://github.com/blipk/bowser-gnome",
 "extension-id": "bowser-gnome",
@@ -23,5 +23,5 @@
     "3.34",
     "3.36"
 ],
-"version": 2
+"version": 3
 }
