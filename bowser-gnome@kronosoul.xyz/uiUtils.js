@@ -125,7 +125,7 @@ var ObjectEditorDialog = GObject.registerClass({
             this.buttons[i].set_reactive(true);
             if (button.style_class) this.buttons[i].add_style_class_name(button.style_class);
         }, this)
-        //dev.log(this.dialogLayout)
+
         //Create an area for each property of our object
         this._propertyBoxes = [];
         this.propertyKeys = Array();

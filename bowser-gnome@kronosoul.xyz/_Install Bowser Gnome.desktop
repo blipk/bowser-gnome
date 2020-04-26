@@ -5,7 +5,7 @@ Name[en_AU]=Install Bowser Gnome Extension
 GenericName=Install Bowser Web Browser Chooser
 Comment=Install Bowser: Set up rules to open specific URLs in specific web browsers
 Exec=bash -c "cd \"$(dirname %k)\" && chmod +x _install.sh && ./_install.sh && zenity --info --text='Restart Gnome Shell to finish installing Bowser extension.'"
-Icon=bowser.png
+Icon=org.gnome.Extensions
 Terminal=false
 Type=Application
 X-Desktop-File-Install-Version=0.24
