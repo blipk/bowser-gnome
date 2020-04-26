@@ -152,7 +152,7 @@ function _enableURIWatcher() {
             outstream.close(null);
 
             Me.URIs = Me.URIs.concat(lines);
-            dev.log(Me.URIs)
+
             processURIs();
             } catch(e) { dev.log(e); }
         });
@@ -442,7 +442,7 @@ function disableBowser() {
     let browser = Me.config.defaultBrowser;
     browser = browser.substring(browser.lastIndexOf("/")+1, browser.length);
     let result = setxdgDefaultBrowser(browser)
-    dev.log(browser)
+
     let msg = Me.config.browserApps[Me.config.defaultBrowser][0] + " is now your default browser."
     if (result != '') msg = "Error Disabling Bowser: " + result
     uiUtils.showUserFeedbackMessage(msg)
