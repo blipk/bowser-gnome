@@ -22,7 +22,7 @@
 const Main = imports.ui.main;
 const ExtensionSystem = imports.ui.extensionSystem;
 const ByteArray = imports.byteArray;
-const { Meta, GLib, Gio, Clutter, St } = imports.gi;
+const { Meta, GLib, Gio, Clutter, St, Shell } = imports.gi;
 const { extensionUtils, util } = imports.misc;
 const GioSSS = Gio.SettingsSchemaSource;
 const Gettext = imports.gettext;
@@ -43,7 +43,7 @@ function enable() {
     try {
     dev.log(scopeName+'.'+arguments.callee.name, "@---------------------------------|");
     if (Me.bowserIndicator) return; // Already initialized
-
+    
     // Setup global access
     Me.makeConfiguration = makeConfiguration;
     Me.loadConfiguration = loadConfiguration;
@@ -342,45 +342,27 @@ function makeConfiguration() {
 
 function detectWebBrowsers() {
     try{
-    let installedApps = []
-    let userAppPath = fileUtils.USER_DATA_DIR+'/applications/'
-    if (fileUtils.checkExists(userAppPath)) installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(userAppPath));
-
-    fileUtils.SYS_DATA_DIRS.forEach(function(dir) {
-        dir += "/applications/"
-        if (fileUtils.checkExists(dir)) installedApps = installedApps.concat(fileUtils.enumarateDirectoryChildren(dir));
-    }, this);
-
+    let installedApps = Shell.AppSystem.get_default().get_installed();
     let tmpbrowserApps = {};
     let currentBrowser = getxdgDefaultBrowser();
-    
-    installedApps.forEach(function(app, i) {
-        if (app.fullname == "bowser.desktop" || app.fullname == "bowser-gnome.desktop") return;
-        let fullAppPath = app.parentDirectory+app.fullname;
-        let file = Gio.file_new_for_path(fullAppPath);
-        let buffer = file.load_contents(null);
-        let contents = ByteArray.toString(buffer[1]);
-        
-        let catLoc = contents.indexOf("Categories=");
 
-        if (catLoc > -1) {
-            let cats = contents.substring(catLoc, contents.indexOf("\n", contents.indexOf("Categories=")));
-            if (cats.indexOf("WebBrowser") > -1) {
-                if(app.fullname.indexOf(currentBrowser) > -1) currentBrowser = app.fullname;
-                let nameLoc = contents.indexOf("Name=");
-                let execLoc = contents.indexOf("Exec=");
-                let mimesLoc = contents.indexOf("MimeType=");
-                let iconLoc = contents.indexOf("Icon=");
+    installedApps.forEach(function(app){
+        let id = app.get_id();
+        if (id == "bowser.desktop" || id == "bowser-gnome.desktop") return;
+        let categories = app.get_categories() || '';
+        if (categories.indexOf("WebBrowser") == -1) return;
 
-                tmpbrowserApps[fullAppPath] = [  
-                    contents.substring(nameLoc+5, contents.indexOf("\n", nameLoc)),
-                    contents.substring(execLoc+5, contents.indexOf("\n", execLoc)),
-                    contents.substring(mimesLoc+9, contents.indexOf("\n", mimesLoc)).split(';').filter(v => v != ""),
-                    contents.substring(iconLoc+5, contents.indexOf("\n", iconLoc)),
-                ];
-            }
-        }
+        let appPath = app.get_filename();
+        let mimeTypes = app.get_string('MimeType').split(';').filter(v => v != "") || [];
+        let name = app.get_name() || app.get_display_name() || 'Unkown App Name';
+        let exec = app.get_string("Exec");
+        let icon = '';
+        if (app.get_icon()) icon = app.get_icon().to_string();
+
+        tmpbrowserApps[appPath] = [ name, exec, mimeTypes, icon ];
     }, this);
+
+    dev.log(tmpbrowserApps)
     
     // Update and save web browser configuration
     let msg;
