@@ -362,8 +362,6 @@ function detectWebBrowsers() {
         tmpbrowserApps[appPath] = [ name, exec, mimeTypes, icon ];
     }, this);
 
-    dev.log(tmpbrowserApps)
-    
     // Update and save web browser configuration
     let msg;
     if (JSON.stringify(Me.config.browserApps) === JSON.stringify(tmpbrowserApps)) msg = "No web browser changes detected."
