@@ -183,16 +183,25 @@ function openBrowser() {
     let URI = Me.URIs[0];
     let matchFound = false;
     let matchedBrowsers = Array();
-    let splitURI = utils.splitURI(URI) ;
+    let splitURI = utils.splitURI(URI);
+    splitURI.pageTitle = '';
+    splitURI.pageContents = '';
+
 
     Me.config.uriPrefs.forEachEntry(function(prefKey, prefValues, i) {
         let compareURI = '';
 
         Me.config.uriPrefs[prefKey].uriOptions.forEachEntry(function(optionKey, optionValue, n) {
             if (!optionValue) return;
-            if (optionValue && optionKey != 'scheme') compareURI += splitURI[optionKey];
+            if (optionValue && optionKey != 'scheme') compareURI += splitURI[optionKey].toLowerCase();
 
-            if (splitURI[optionKey].indexOf(prefKey) > -1 || compareURI.indexOf(prefKey) > -1 && compareURI) {
+            // Search page titles and contents
+            if (optionKey == 'pageTitle' || optionKey == 'pageContents' && (splitURI['pageContents'] == '')) {
+                splitURI['pageContents'] = ByteArray.toString(GLib.spawn_command_line_sync(`wget -T 1 -qO- '${URI}'`)[1]).trim().toLowerCase();
+                splitURI['pageTitle'] = splitURI['pageContents'].match(/<title>[^<]*/)[0].toLowerCase();
+            }
+
+            if (splitURI[optionKey].indexOf(prefKey.toLowerCase()) > -1 || compareURI.indexOf(prefKey.toLowerCase()) > -1 && compareURI) {
                 let browserAlreadyOpened = false;
                 matchedBrowsers.forEach(function(entry, i){
                     if (entry == Me.config.uriPrefs[pref].defaultBrowser) browserAlreadyOpened = true
@@ -328,10 +337,10 @@ function makeConfiguration() {
     if (Me.config.defaultBrowser == undefined) Me.config.defaultBrowser = '';
     if (Me.config.uriPrefs == undefined) Me.config.uriPrefs = {};
     if (Me.config.askOnUnmatchedURI == undefined) Me.config.askOnUnmatchedURI = true;
-    detectWebBrowsers()
+    detectWebBrowsers();
     let currentWebBrowser = getxdgDefaultBrowser();
     if (currentWebBrowser.indexOf('bowser.desktop') == -1 || currentWebBrowser.indexOf('bowser-gnome.desktop') == -1) setxdgDefaultBrowser();
-    let tmp = {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false}
+    let tmp = {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false, 'pageTitle': false, 'pageContents': false}
     if (Object.keys(Me.config.uriPrefs).length <= 0) {
         let obj = {'youtube.com': {'defaultBrowser': Me.config.defaultBrowser, 'uriOptions': tmp}, 'youtu.be': {'defaultBrowser': Me.config.defaultBrowser, 'uriOptions': tmp}}
         Me.config.uriPrefs = JSON.parse(JSON.stringify(obj))

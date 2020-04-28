@@ -252,6 +252,7 @@ var ObjectEditorDialog = GObject.registerClass({
                         let subObjectPropertyDisabled = false;   // TODO
                         let subObjectPropertyHidden = false;
                         let subObjectLabelOnly = false;
+                        let subObjectPropertyOnly = false;
                         let subObjectToggleValidationCallback = (()=>{return [true];});
                         this.subObjectMasks[i].forEach(function(propertyMask, index) {
                             if (this.subObjectMasks[i][index][subobjectKey]) {
@@ -259,6 +260,7 @@ var ObjectEditorDialog = GObject.registerClass({
                                 subObjectPropertyDisabled = this.subObjectMasks[i][index].disabled || subObjectPropertyDisabled;
                                 subObjectPropertyHidden = this.subObjectMasks[i][index].hidden || false;
                                 subObjectLabelOnly = this.subObjectMasks[i][index].labelOnly || subObjectLabelOnly;
+                                subObjectPropertyOnly = this.subObjectMasks[i][index].propertyOnly || subObjectPropertyOnly;
                                 subObjectToggleValidationCallback = this.subObjectMasks[i][index].toggleValidationCallback || subObjectToggleValidationCallback;
                             }
                         }, this);
@@ -277,7 +279,7 @@ var ObjectEditorDialog = GObject.registerClass({
                         
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('uri-element-label')                        
                         //this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.clutter_text.set_line_wrap(false);
-                        this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage, { expand: true });
+                        if (!subObjectPropertyOnly) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage, { expand: true });
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.set_text(subObjectPropertyDisplayName);
                         
                         // Toggling Function
