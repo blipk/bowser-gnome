@@ -258,8 +258,16 @@ var BowserIndicator = GObject.registerClass({
         try {
         let editable = { searchText: menuItem.prefkey };
         Object.assign(editable, JSON.parse(JSON.stringify(menuItem.prefvalue)));
-        let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
-        let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}, {defaultBrowser: ' ', hidden: true}];
+        let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}, {pageContents: ' ', pageTitle: ' ', hidden: true}]
+        editable.extras = {pageTitle: menuItem.prefvalue.uriOptions.pageTitle};
+        let extrasEdiables = [{pageTitle: ' ', propertyOnly: true}];
+        editable.extras2 = {pageContents: menuItem.prefvalue.uriOptions.pageContents};
+        let extrasEdiables2 = [{pageContents: ' ', propertyOnly: true}];
+
+        let editables = [{searchText: 'Text to search for: '}, {defaultBrowser: ' ', hidden: true},
+                {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}, 
+                {extras: 'Search Page Title:', subObjectEditableProperties: extrasEdiables},
+                {extras2: 'Search Page Contents:', subObjectEditableProperties: extrasEdiables2} ];
         let buttonStyles = [ { label: "Cancel", key: Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
 
         let editRuleDialog = new uiUtils.ObjectEditorDialog("Editing Rule "+menuItem.nameText, (returnObject) => {
@@ -268,9 +276,13 @@ var BowserIndicator = GObject.registerClass({
             if (returnObject.searchText == '') return;
             if (menuItem.prefkey == returnObject.searchText) { //No name change, which is the key
                 Me.config.uriPrefs[menuItem.prefkey].uriOptions = returnObject.uriOptions;
+                Me.config.uriPrefs[menuItem.prefkey].uriOptions.pageTitle = returnObject.extras.pageTitle;
+                Me.config.uriPrefs[menuItem.prefkey].uriOptions.pageContents = returnObject.extras2.pageContents;
             } else {    // Can probably do this if the name didn't change but will mess up menu ordering
                 Me.config.uriPrefs[returnObject.searchText] = Object();
                 Me.config.uriPrefs[returnObject.searchText].uriOptions = returnObject.uriOptions;
+                Me.config.uriPrefs[returnObject.searchText].uriOptions.pageTitle = returnObject.extras.pageTitle;
+                Me.config.uriPrefs[returnObject.searchText].uriOptions.pageContents = returnObject.extras2.pageContents;
                 Me.config.uriPrefs[returnObject.searchText].defaultBrowser = menuItem.prefvalue.defaultBrowser;
                 this._prefMenuItemRemoveEntry(menuItem, false);
             }
@@ -281,9 +293,11 @@ var BowserIndicator = GObject.registerClass({
     }
     _newRule() {
         try {
-        let editable = {'searchText': '', uriOptions: {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false}};
+        let editable = {'searchText': '', uriOptions: {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false}, extras: {pageTitle: false}, extras2: {pageContents: false}};
         let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
-        let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}];
+        let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables},
+                                    {extras: 'Search Page Title:', subObjectEditableProperties: [{pageTitle: ' ', propertyOnly: true}]},
+                                    {extras2: 'Search Page Contents:', subObjectEditableProperties: [{pageContents: ' ', propertyOnly: true}]}];
         let buttonStyles = [ { label: "Cancel", key: Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
         let createRuleDialog = new uiUtils.ObjectEditorDialog("Create New Rule ", (returnObject) => {
             if (!returnObject) return;
@@ -293,6 +307,8 @@ var BowserIndicator = GObject.registerClass({
                 defaultBrowser: Me.config.defaultBrowser,
                 uriOptions: returnObject.uriOptions
             }
+            Me.config.uriPrefs[returnObject.searchText].uriOptions.pageTitle = returnObject.extras.pageTitle;
+            Me.config.uriPrefs[returnObject.searchText].uriOptions.pageContents = returnObject.extras2.pageContents;
             Me.saveConfiguration();
             uiUtils.showUserFeedbackMessage("New rule created.");
         }, editable, editables, buttonStyles);
