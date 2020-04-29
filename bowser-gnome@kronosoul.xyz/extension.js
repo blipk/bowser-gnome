@@ -22,7 +22,7 @@
 const Main = imports.ui.main;
 const ExtensionSystem = imports.ui.extensionSystem;
 const ByteArray = imports.byteArray;
-const { Meta, GLib, Gio, Clutter, St, Shell } = imports.gi;
+const { Meta, GLib, Gio, Clutter, St, Shell, Soup } = imports.gi;
 const { extensionUtils, util } = imports.misc;
 const GioSSS = Gio.SettingsSchemaSource;
 const Gettext = imports.gettext;
@@ -196,15 +196,22 @@ function openBrowser() {
             if (optionValue && optionKey != 'scheme') compareURI += splitURI[optionKey].toLowerCase();
 
             // Search page titles and contents
-            if (optionKey == 'pageTitle' || optionKey == 'pageContents' && (splitURI['pageContents'] == '')) {
-                splitURI['pageContents'] = ByteArray.toString(GLib.spawn_command_line_sync(`wget -T 1 -qO- '${URI}'`)[1]).trim().toLowerCase();
-                splitURI['pageTitle'] = splitURI['pageContents'].match(/<title>[^<]*/)[0].toLowerCase();
+            if ((splitURI['pageContents'] == '') && (optionKey == 'pageTitle' || optionKey == 'pageContents')) {
+                let msg = Soup.Message.new_from_uri('GET', new Soup.URI(URI));
+                let httpSession = new Soup.Session();
+                httpSession.send_message(msg);
+                if (msg.status_code === 200) {
+                    splitURI['pageContents'] = msg.response_body.data.toLowerCase();
+                    if (splitURI['pageContents']) splitURI['pageTitle'] = splitURI['pageContents'].match(/<title>[^<]*/)[0];
+                } else {
+                    splitURI['pageContents'] = ' ';  // If we don't get an OK response, set this so we don't keep trying
+                }
             }
 
-            if (splitURI[optionKey].indexOf(prefKey.toLowerCase()) > -1 || compareURI.indexOf(prefKey.toLowerCase()) > -1 && compareURI) {
+            if (splitURI[optionKey].indexOf(prefKey.toLowerCase()) > -1 || (compareURI.indexOf(prefKey.toLowerCase()) > -1 && compareURI)) {
                 let browserAlreadyOpened = false;
                 matchedBrowsers.forEach(function(entry, i){
-                    if (entry == Me.config.uriPrefs[pref].defaultBrowser) browserAlreadyOpened = true
+                    if (entry == Me.config.uriPrefs[prefKey].defaultBrowser) browserAlreadyOpened = true
                 }, this)
                 if (matchFound && browserAlreadyOpened) return;
                 matchFound = true;
