@@ -218,8 +218,8 @@ function openBrowser() {
 
                 matchedBrowsers.push(Me.config.uriPrefs[prefKey].defaultBrowser)
 
-                let exec = Me.config.browserApps[Me.config.uriPrefs[prefKey].defaultBrowser][1].replace("%u", "").replace("%U", "").trim();
-                util.spawn([exec, URI]);
+                let exec = Me.config.browserApps[Me.config.uriPrefs[prefKey].defaultBrowser][1].replace("%u", URI).replace("%U", URI).trim().split(" ");
+                util.spawn(exec);
                 Me.URIs.shift();
             }
         }, this)
@@ -228,8 +228,8 @@ function openBrowser() {
     if (Me.config.askOnUnmatchedURI && matchFound == false) {
             spawnUnmatchedURIDialog()
     } else if (!matchFound) {
-        let exec = Me.config.browserApps[Me.config.defaultBrowser][1].replace("%u", "").replace("%U", "").trim();
-        util.spawn([exec, URI]);
+        let exec = Me.config.browserApps[Me.config.defaultBrowser][1].replace("%u", URI).replace("%U", URI).trim().split(" ");
+        util.spawn(exec);
         Me.URIs.shift();
     }
     } catch(e) { dev.log(e); }
