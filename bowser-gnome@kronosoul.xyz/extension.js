@@ -199,6 +199,7 @@ function openBrowser() {
             if ((splitURI['pageContents'] == '') && (optionKey == 'pageTitle' || optionKey == 'pageContents')) {
                 let msg = Soup.Message.new_from_uri('GET', new Soup.URI(URI));
                 let httpSession = new Soup.Session();
+                httpSession.timeout = 3;
                 httpSession.send_message(msg);
                 if (msg.status_code === 200) {
                     splitURI['pageContents'] = msg.response_body.data.toLowerCase();
@@ -218,8 +219,9 @@ function openBrowser() {
 
                 matchedBrowsers.push(Me.config.uriPrefs[prefKey].defaultBrowser)
 
-                let exec = Me.config.browserApps[Me.config.uriPrefs[prefKey].defaultBrowser][1].replace("%u", URI).replace("%U", URI).trim().split(" ");
-                util.spawn(exec);
+                let exec = Me.config.browserApps[Me.config.uriPrefs[prefKey].defaultBrowser][1].replace("%u", URI).replace("%U", URI);
+                let [success, argv] = GLib.shell_parse_argv(exec);
+                util.spawn(argv);
                 Me.URIs.shift();
             }
         }, this)
@@ -228,8 +230,9 @@ function openBrowser() {
     if (Me.config.askOnUnmatchedURI && matchFound == false) {
             spawnUnmatchedURIDialog()
     } else if (!matchFound) {
-        let exec = Me.config.browserApps[Me.config.defaultBrowser][1].replace("%u", URI).replace("%U", URI).trim().split(" ");
-        util.spawn(exec);
+        let exec = Me.config.browserApps[Me.config.defaultBrowser][1].replace("%u", URI).replace("%U", URI);
+        let [success, argv] = GLib.shell_parse_argv(exec);
+        util.spawn(argv);
         Me.URIs.shift();
     }
     } catch(e) { dev.log(e); }
