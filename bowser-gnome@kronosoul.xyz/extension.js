@@ -80,7 +80,6 @@ function disable() {
     if (Me.extensionChangedHandler) ExtensionSystem.disconnect(extensionChangedHandler);
     dev.log(scopeName+'.'+arguments.callee.name, "!^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^|"+'\r\n');
     } catch(e) { dev.log(e); }
-    
 }
 // 3.0 API backward compatibility
 function main() {
@@ -108,11 +107,11 @@ function _installbowser() {
 
     // Install icon resources
     if (!fileUtils.checkExists([fileUtils.PNG_ICON_FILE]))
-        fileUtils.saveRawToFile(atob(BOWSER_PNG_RESOURCE), 'bowser.png', fileUtils.RES_PNG_ICON_FILE);
+        fileUtils.saveRawToFile(fileUtils.atob(BOWSER_PNG_RESOURCE), 'bowser.png', fileUtils.RES_PNG_ICON_FILE);
         util.spawnCommandLine("xdg-icon-resource install --novendor --context apps --size 256 "+fileUtils.RES_PNG_ICON_FILE+" bowser");
     
     if (fileUtils.checkExists([fileUtils.SVG_ICON_FILE])) return;
-    fileUtils.saveRawToFile(atob(BOWSER_SVG_RESOURCE), 'bowser.svg', fileUtils.USER_DATA_DIR+'/icons/hicolor/scalable/apps'); // xdg-icon-resource does not accept svg
+    fileUtils.saveRawToFile(fileUtils.atob(BOWSER_SVG_RESOURCE), 'bowser.svg', fileUtils.USER_DATA_DIR+'/icons/hicolor/scalable/apps'); // xdg-icon-resource does not accept svg
 
     } catch(e) { dev.log(e); }
 }
