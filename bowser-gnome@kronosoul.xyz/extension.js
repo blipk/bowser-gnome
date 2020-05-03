@@ -97,9 +97,8 @@ function _checkBowser() {
 }
 function _installbowser() { 
     try {
-    let { BOWSERG_DESKTOP_FILE, BOWSER_SVG_RESOURCE, BOWSER_PNG_RESOURCE } = Me.imports.resources;
     // Create and install XDG Dekstop file
-    fileUtils.saveRawToFile(BOWSERG_DESKTOP_FILE, 'bowser-gnome.desktop', fileUtils.CONF_DIR);
+    fileUtils.saveRawToFile(Me.imports.resources.BOWSERG_DESKTOP_FILE, 'bowser-gnome.desktop', fileUtils.CONF_DIR);
     if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE])) 
         GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
 
@@ -107,12 +106,12 @@ function _installbowser() {
 
     // Install icon resources
     if (!fileUtils.checkExists([fileUtils.PNG_ICON_FILE]))
-        fileUtils.saveRawToFile(fileUtils.atob(BOWSER_PNG_RESOURCE), 'bowser.png', fileUtils.RES_PNG_ICON_FILE);
         util.spawnCommandLine("xdg-icon-resource install --novendor --context apps --size 256 "+fileUtils.RES_PNG_ICON_FILE+" bowser");
     
-    if (fileUtils.checkExists([fileUtils.SVG_ICON_FILE])) return;
-    fileUtils.saveRawToFile(fileUtils.atob(BOWSER_SVG_RESOURCE), 'bowser.svg', fileUtils.USER_DATA_DIR+'/icons/hicolor/scalable/apps'); // xdg-icon-resource does not accept svg
+    if (!fileUtils.checkExists([fileUtils.SVG_ICON_FILE])) // xdg-icon-resource does not accept svg
+        Gio.file_new_for_path(fileUtils.RES_SVG_ICON_FILE).copy(Gio.file_new_for_path(fileUtils.SVG_ICON_FILE), Gio.FileCopyFlags.OVERWRITE, null, null)
 
+    util.spawnCommandLine("gtk-update-icon-cache -f ~/.local/share/icons/hicolor --ignore-theme-index");
     } catch(e) { dev.log(e); }
 }
 function _enableURIWatcher() {
