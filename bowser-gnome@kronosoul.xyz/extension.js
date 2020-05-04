@@ -200,8 +200,10 @@ function openBrowser() {
                 httpSession.timeout = 3;
                 httpSession.send_message(msg);
                 if (msg.status_code === 200) {
+                    try {
                     splitURI['pageContents'] = msg.response_body.data.toLowerCase();
                     if (splitURI['pageContents']) splitURI['pageTitle'] = splitURI['pageContents'].match(/<title>[^<]*/)[0];
+                    } catch (e) { dev.log(e); } finally { splitURI['pageContents'] = ' ' }
                 } else {
                     splitURI['pageContents'] = ' ';  // If we don't get an OK response, set this so we don't keep trying
                 }
