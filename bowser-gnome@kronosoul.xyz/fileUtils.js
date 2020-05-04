@@ -59,7 +59,7 @@ function checkExists(path) {
         result = true;
         path.forEach(function(path) {
             if (!checkExists(path)) result = false;
-        }, this)
+        }, this);
     }
     return result;
 }

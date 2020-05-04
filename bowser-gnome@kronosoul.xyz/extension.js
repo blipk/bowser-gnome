@@ -142,8 +142,7 @@ function _enableURIWatcher() {
             strContents = ByteArray.toString(contents);
             let lines = strContents.split(/[\r\n]+/); lines.pop();
 
-            //Overwrite the file as URI/s have been read
-            //outFile.delete(null);
+            // Overwrite the file as URI/s have been read
             if (lines.length == 0) return;
             let outstream = outFile.replace(null, false, Gio.FileCreateFlags.NONE, null);
             outstream.write('', null);
@@ -171,7 +170,7 @@ function processURIs() {
                 Me.URIs.shift();
                 //if (Me.URIs.length > 0) spawnUnmatchedURIDialog(Me.URIs); // Process next URI
             }
-        }, this)
+        }, this);
 
         if (!cancel) openBrowser();
     } catch(e) { dev.log(e); }
@@ -184,7 +183,6 @@ function openBrowser() {
     let splitURI = utils.splitURI(URI);
     splitURI.pageTitle = '';
     splitURI.pageContents = '';
-
 
     Me.config.uriPrefs.forEachEntry(function(prefKey, prefValues, i) {
         let compareURI = '';
@@ -203,7 +201,7 @@ function openBrowser() {
                     try {
                     splitURI['pageContents'] = msg.response_body.data.toLowerCase();
                     if (splitURI['pageContents']) splitURI['pageTitle'] = splitURI['pageContents'].match(/<title>[^<]*/)[0];
-                    } catch (e) { dev.log(e); } finally { splitURI['pageContents'] = ' ' }
+                    } catch (e) { dev.log(e); } finally { splitURI['pageContents'] = ' ' };
                 } else {
                     splitURI['pageContents'] = ' ';  // If we don't get an OK response, set this so we don't keep trying
                 }
@@ -213,10 +211,9 @@ function openBrowser() {
                 let browserAlreadyOpened = false;
                 matchedBrowsers.forEach(function(entry, i){
                     if (entry == Me.config.uriPrefs[prefKey].defaultBrowser) browserAlreadyOpened = true
-                }, this)
+                }, this);
                 if (matchFound && browserAlreadyOpened) return;
                 matchFound = true;
-
                 matchedBrowsers.push(Me.config.uriPrefs[prefKey].defaultBrowser)
 
                 let exec = Me.config.browserApps[Me.config.uriPrefs[prefKey].defaultBrowser][1].replace("%u", URI).replace("%U", URI);
@@ -224,8 +221,8 @@ function openBrowser() {
                 util.spawn(argv);
                 Me.URIs.shift();
             }
-        }, this)
-    }, this)
+        }, this);
+    }, this);
 
     if (Me.config.askOnUnmatchedURI && matchFound == false) {
             spawnUnmatchedURIDialog()
@@ -373,7 +370,7 @@ function detectWebBrowsers() {
 
         let appPath = app.get_filename();
         let mimeTypes = app.get_string('MimeType').split(';').filter(v => v != "") || [];
-        let name = app.get_name() || app.get_display_name() || 'Unkown App Name';
+        let name = app.get_name() || app.get_display_name() || ' ';
         let exec = app.get_string("Exec");
         let icon = '';
         if (app.get_icon()) icon = app.get_icon().to_string();
