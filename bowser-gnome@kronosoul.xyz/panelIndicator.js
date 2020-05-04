@@ -2,7 +2,7 @@
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * Copyright (C) 2020 A.D. - http://kronosoul.xyz
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 // External imports
@@ -62,7 +62,7 @@ var BowserIndicator = GObject.registerClass({
         //Build our menu
         this._buildMenu();
         this._refreshMenu()
-        } catch(e) { dev.log(e); }    
+        } catch(e) { dev.log(e); }
     }
     _onOpenStateChanged(menu, open) {/*Override from parent class to handle menuitem refresh*/
         this._refreshMenu();
@@ -105,7 +105,7 @@ var BowserIndicator = GObject.registerClass({
 
         // Add separator
         this.menu.addMenuItem(new popupMenu.PopupSeparatorMenuItem());
-        
+
         // Prefs menu button menu
         let settingsMenuItem = new popupMenu.PopupImageMenuItem('New Rule', 'bookmark-new-symbolic');
         settingsMenuItem.label.set_x_expand(true);
@@ -122,7 +122,7 @@ var BowserIndicator = GObject.registerClass({
         } catch(e) { dev.log(e); }
     }
     _refreshMenu() {
-        try { 
+        try {
         //Remove all and re-add with any changes
         if (utils.isEmpty(Me.config)) return;
         Me.loadConfiguration();
@@ -178,7 +178,7 @@ var BowserIndicator = GObject.registerClass({
         // Remove all and read
         menuItem.prefBrowsersMenuItems.forEach(function (mItem) { mItem.destroy(); });
         menuItem.prefBrowsersMenuItems = [];
-        
+
         Me.config.browserApps.forEachEntry(function(browserAppKey, browserAppValue, i){
             let [name, exec, mimetypes, icon] = browserAppValue;
             icon = icon || 'web-browser-sybmolic';
@@ -191,7 +191,7 @@ var BowserIndicator = GObject.registerClass({
                 menuItem.setSubmenuShown(false);
                 menuItem.menu.itemActivated(boxpointer.PopupAnimation.NONE);
             });
-            (menuItem.prefvalue.defaultBrowser == browserAppKey) ? 
+            (menuItem.prefvalue.defaultBrowser == browserAppKey) ?
                     menuItem.prefBrowsersMenuItems[i].setOrnament(popupMenu.Ornament.DOT) : menuItem.prefBrowsersMenuItems[i].setOrnament(popupMenu.Ornament.NONE);
             menuItem.menu.addMenuItem(menuItem.prefBrowsersMenuItems[i]);
         }, this);
@@ -208,7 +208,7 @@ var BowserIndicator = GObject.registerClass({
         this.webbrowsersMenuItems.forEach(function (mItem) { mItem.destroy(); });
         if (this.detectWebBrowserMenuButton) this.detectWebBrowserMenuButton.destroy()
         this.webbrowsersMenuItems = [];
-        
+
         Me.config.browserApps.forEachEntry(function(browserAppKey, browserApp, i){
             let name = browserApp[0]
             let exec = browserApp[1]
@@ -225,7 +225,7 @@ var BowserIndicator = GObject.registerClass({
             //uiUtils.createIconButton(this.webbrowsersMenuItems[i], icon, () => {});
             this.defaultBrowsersSubMenu.menu.addMenuItem(this.webbrowsersMenuItems[i]);
         }, this);
-        
+
         this.detectWebBrowserMenuButton = new popupMenu.PopupImageMenuItem(_("Scan Installed Browsers"), "bowser");
         this.detectWebBrowserMenuButton.connect('activate', () => {
             Me.detectWebBrowsers()
@@ -265,7 +265,7 @@ var BowserIndicator = GObject.registerClass({
         let extrasEdiables2 = [{pageContents: ' ', propertyOnly: true}];
 
         let editables = [{searchText: 'Text to search for: '}, {defaultBrowser: ' ', hidden: true},
-                {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables}, 
+                {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables},
                 {extras: 'Search Page Title:', subObjectEditableProperties: extrasEdiables},
                 {extras2: 'Search Page Contents:', subObjectEditableProperties: extrasEdiables2} ];
         let buttonStyles = [ { label: "Cancel", key: Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];

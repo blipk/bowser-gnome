@@ -2,7 +2,7 @@
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * Copyright (C) 2020 A.D. - http://kronosoul.xyz
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 // External imports
@@ -91,19 +91,19 @@ Object.defineProperty(Object.prototype, 'filterObj', {
 function splitURI(inURI) {
     try {
     let regexPattern = /^(([^:/\?#]+):)?(\/\/([^/\?#]*))?([^\?#]*)(\?([^#]*))?(#(.*))?/;
-    
+
     let re = RegExp(regexPattern)
     let output = re.exec(inURI);
 
     if (output[3] == undefined)
         inURI = 'foo://' + inURI;
         output = re.exec(inURI);
-    
+
     // Named capture groups not working on gjs :(
-    let splitURI = {'scheme': output[1], 'schemeTrim': output[2], 
-                'authority': output[3], 'authorityTrim': output[4], 
-                'path': output[5], 
-                'query': output[6], 'queryTrim': output[7], 
+    let splitURI = {'scheme': output[1], 'schemeTrim': output[2],
+                'authority': output[3], 'authorityTrim': output[4],
+                'path': output[5],
+                'query': output[6], 'queryTrim': output[7],
                 'fragment': output[8], 'fragmentTrim': output[9]}
 
     if (splitURI['scheme'] == 'foo:')

@@ -25,32 +25,32 @@ entry:indeterminate {
     margin: 0px;
     color: #eeeeec;
     background-color: rgba(23, 25, 26, 0.95);
-    border: 3px solid rgba(238, 238, 236, 0.5); 
+    border: 3px solid rgba(238, 238, 236, 0.5);
 }
 .object-dialog .object-dialog-content-box {
-    padding: 24px; 
+    padding: 24px;
 }
   .object-dialog .object-dialog-entry {
     width: 20em;
-    margin-bottom: 6px; 
+    margin-bottom: 6px;
 }
   .object-dialog .object-dialog-error-box {
     padding-top: 16px;
-    spacing: 6px; 
+    spacing: 6px;
 }
   .object-dialog .object-dialog-button-box {
-    padding-top: 1em; 
+    padding-top: 1em;
 }
   .object-dialog .object-dialog-label {
     font-size: 12pt;
     font-weight: bold;
     color: #d6d6d1;
-    padding-bottom: .4em; 
+    padding-bottom: .4em;
 }
 
 .spacing7 {
     padding-right: 7px;
-    spacing: 7px; 
+    spacing: 7px;
 }
 .label-active { color: green; }
 .label-inactive { color: orange; }
@@ -67,7 +67,7 @@ entry:indeterminate {
     margin: 0em;
     color: #eeeeec;
     background-color: rgba(59, 59, 90, 0.7);
-    
+
 }
 
 .browser-dialog-content-box {
@@ -77,13 +77,13 @@ entry:indeterminate {
 
 .browser-box {
     padding: 1em;
-    border-top: 1px dashed black; 
-    border-bottom: 1px dashed black; 
+    border-top: 1px dashed black;
+    border-bottom: 1px dashed black;
 }
 .browser-box:active {
     background-color: rgba(59, 59, 90, 0.3);}
 .browser-box:focus {
-    background-color: rgba(59, 59, 90, .3); }  
+    background-color: rgba(59, 59, 90, .3); }
 
 .browser-label {
     padding-left: 0.3em;
@@ -92,7 +92,7 @@ entry:indeterminate {
 .browser-label:active {
 }
 .browser-label:hover {
-}  
+}
 .browser-label-icon {
 
 }
@@ -105,7 +105,7 @@ entry:indeterminate {
 .browser-uri-box:active {
     background-color: rgba(59, 59, 90, 0.3);}
 .browser-uri-box:focus {
-    background-color: rgba(59, 59, 90, .3); }  
+    background-color: rgba(59, 59, 90, .3); }
 
 .browser-dialog-buttons {
     margin: 0em;
