@@ -2,7 +2,7 @@
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * Copyright (C) 2020 A.D. - http://kronosoul.xyz
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 // External imports
@@ -43,7 +43,7 @@ function enable() {
     try {
     dev.log(scopeName+'.'+arguments.callee.name, "@---------------------------------|");
     if (Me.bowserIndicator) return; // Already initialized
-    
+
     // Setup global access
     Me.makeConfiguration = makeConfiguration;
     Me.loadConfiguration = loadConfiguration;
@@ -90,16 +90,16 @@ function _checkBowser() {
     try {
     if (!fileUtils.checkExists([fileUtils.PYBOWSER_EXEC_FILE])) _installbowser();
     else Me.PYBOWSER = true;
-    
+
     if (!fileUtils.checkExists([fileUtils.PYBOWSER_CONF_FILE])) makeConfiguration();
     loadConfiguration();
     } catch(e) { dev.log(e); }
 }
-function _installbowser() { 
+function _installbowser() {
     try {
     // Create and install XDG Dekstop file
     fileUtils.saveRawToFile(Me.imports.resources.BOWSERG_DESKTOP_FILE, 'bowser-gnome.desktop', fileUtils.CONF_DIR);
-    if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE])) 
+    if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
         GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
 
     if (getxdgDefaultBrowser() != 'bowser-gnome.desktop') setxdgDefaultBrowser('bowser-gnome.desktop');
@@ -107,7 +107,7 @@ function _installbowser() {
     // Install icon resources
     if (!fileUtils.checkExists([fileUtils.PNG_ICON_FILE]))
         util.spawnCommandLine("xdg-icon-resource install --novendor --context apps --size 256 "+fileUtils.RES_PNG_ICON_FILE+" bowser");
-    
+
     if (!fileUtils.checkExists([fileUtils.SVG_ICON_FILE])) // xdg-icon-resource does not accept svg
         Gio.file_new_for_path(fileUtils.RES_SVG_ICON_FILE).copy(Gio.file_new_for_path(fileUtils.SVG_ICON_FILE), Gio.FileCopyFlags.OVERWRITE, null, null)
 
@@ -254,7 +254,7 @@ function spawnUnmatchedURIDialog() {
                 if (!boolValues.includes(false)) {      // If they are all on
                     if (n == 2) boolValues[3] = false; // Drop the rest of the chain if we toggle a middle element
                     if (n == 1) boolValues[2] = boolValues[3] = false;
-                    //if (boolValues.length > 1) allowed = true;    // 
+                    //if (boolValues.length > 1) allowed = true;    //
                 }
                 if (boolValues[n+1] == boolValues[n] && boolValues[n-1] == boolValues[n]) boolValues[n+1] = !boolValues[n];    // Drop adjacent to maintian chain
             } else {        // If DISABLED
@@ -285,7 +285,7 @@ function spawnUnmatchedURIDialog() {
         editables[i+1].boxClickCallback = function(i) {
             // Create rule
             let outURI = ''
-            
+
             this.editableObject.uriOptions.forEachEntry(function(key, value, z) {
                 if (key == 'authority') key = 'authorityTrim'
                 if (value == true) outURI += splitURI[key];
@@ -334,7 +334,7 @@ function loadConfiguration(configObject = null, filename = 'bowser.conf', filedi
 function saveConfiguration(filename = 'bowser.conf', filedirectory = fileUtils.PYBOWSER_CONF_DIR) {
     try {
     if (utils.isEmpty(Me.config)) return;
-    let configCopy = JSON.parse(JSON.stringify(Me.config));    
+    let configCopy = JSON.parse(JSON.stringify(Me.config));
     let timestamp = new Date().toLocaleString().replace(/[^a-zA-Z0-9-. ]/g, '').replace(/ /g, '');
     fileUtils.saveJSObjectToFile(configCopy, filename, filedirectory);
     } catch(e) { dev.log(e); }
@@ -385,10 +385,10 @@ function detectWebBrowsers() {
     let msg;
     if (JSON.stringify(Me.config.browserApps) === JSON.stringify(tmpbrowserApps)) msg = "No web browser changes detected."
     else msg = "Bowser has detected changes in your installed web browsers."
-    
+
     Me.config.browserApps = tmpbrowserApps;
 
-    if (Me.config.defaultBrowser == '' && (currentBrowser == 'bowser.desktop' || currentBrowser == 'bowser-gnome.desktop')) 
+    if (Me.config.defaultBrowser == '' && (currentBrowser == 'bowser.desktop' || currentBrowser == 'bowser-gnome.desktop'))
         Me.config.defaultBrowser = Object.keys(Me.config.browserApps)[0]
     else if (Me.config.defaultBrowser == '') Me.config.defaultBrowser = currentBrowser;
 

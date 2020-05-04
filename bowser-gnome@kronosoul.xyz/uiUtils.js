@@ -2,7 +2,7 @@
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * Copyright (C) 2020 A.D. - http://kronosoul.xyz
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 // External imports
@@ -70,14 +70,14 @@ function showUserFeedbackMessage(input, overviewMessage=false) {
 var ObjectEditorDialog = GObject.registerClass({
     GTypeName: 'ObjectEditorDialog'
 }, class ObjectEditorDialog extends modalDialog.ModalDialog {
-    _init(dialogInfoTextStyle='', callback=null, 
+    _init(dialogInfoTextStyle='', callback=null,
         editableObject=null, /*object to edit in the editor */
         editableProperties=[], /* {propertyName: 'Property Display Name', disabled: false, hidden: false, subObjectEditableProperties: editableProperties,  icon: icon-name, hintText: 'Hint text to display for St.Entry', minwidth: 20, subObjectEditableProperties=[]}*/
         buttons = null,
         dialogStyle = null,
         contentLayoutBoxStyleClass = ''
         ) {
-        
+
         if (typeof callback !== 'function') throw TypeError('ObjectEditorDialog._init error: callback must be a function');
         this._callback = callback;
 
@@ -86,14 +86,14 @@ var ObjectEditorDialog = GObject.registerClass({
         this.editableObject = editableObject;
         this._unreferencedObjectCopy = JSON.parse(JSON.stringify(editableObject));
 
-        
+
         try{
         // Initialize dialog with style
         let defaults = { styleClass: 'object-dialog', destroyOnClose: true };
         dialogStyle = {...defaults, ...dialogStyle };
         super._init(dialogStyle);
         this.contentLayout.style_class = contentLayoutBoxStyleClass ? contentLayoutBoxStyleClass : this.contentLayout.style_class;
-        
+
         //Label for our dialog/text field with text about the dialog or a prompt for user text input
         defaults = { style_class: 'object-dialog-label', text: _((dialogInfoTextStyle.text || dialogInfoTextStyle).toString()), x_align: St.Align.START, y_align: St.Align.START } ;
         dialogInfoTextStyle = (typeof dialogInfoTextStyle == 'string') ? defaults : {...defaults, ...dialogInfoTextStyle };
@@ -115,12 +115,12 @@ var ObjectEditorDialog = GObject.registerClass({
         //Action buttons
         this.buttons = Array();
         buttons = (buttons == null) ? 'Done' : buttons;
-        defaults = [{ label: (buttons), default: true}];       //key: Clutter.KEY_Escape 
+        defaults = [{ label: (buttons), default: true}];       //key: Clutter.KEY_Escape
         buttons = (typeof buttons == 'string') ? defaults : buttons;
         buttons.forEach(function (button, i) {
             if (button.action) button.action = button.action.bind(this);
             else button.action = this.close.bind(this);
-            
+
             this.buttons[i] = this.addButton(button);
             this.buttons[i].set_reactive(true);
             if (button.style_class) this.buttons[i].add_style_class_name(button.style_class);
@@ -185,7 +185,7 @@ var ObjectEditorDialog = GObject.registerClass({
                     this.propertyBoxClickCallbacks[i].call(this, i);
                 });
                 this.contentLayout.add(this._propertyBoxes[i], this.propertyBoxStyle[i]);
-                
+
                 // Left side labelled button
                 this._propertyBoxes[i]._propertyBoxMessageButton = new St.Button(this.propertyLabelStyle[i]);
                 this._propertyBoxes[i]._propertyBoxMessage = new St.Label(this.propertyLabelStyle[i]);
@@ -212,16 +212,16 @@ var ObjectEditorDialog = GObject.registerClass({
                     this._propertyBoxes[i]._propertyBoxEditorElement = new St.Entry({ style_class: 'object-dialog-label', can_focus: true, text: '', x_align: Clutter.ActorAlign.FILL, x_expand: true});
                     this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.min_width = 200;
                     this._focusElement = this._propertyBoxes[i]._propertyBoxEditorElement;  // To set initial focus
-                    if (this.propertyDisabled[i] === true) {    
+                    if (this.propertyDisabled[i] === true) {
                         this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_editable(false);
                         this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_selectable(false);
-                        this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_max_length(value.length);   
+                        this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_max_length(value.length);
                     }
                     this._propertyBoxes[i]._propertyBoxEditorElement.set_text(value.toString());
                     this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxEditorElement, { y_align: St.Align.END });
-                    
+
                     this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.get_buffer().connect('inserted-text', (o, position, new_text, new_text_length, e) => {
-                        if (typeof value !== 'number') return Clutter.EVENT_PROPAGATE; 
+                        if (typeof value !== 'number') return Clutter.EVENT_PROPAGATE;
                         if (new_text.search(/^[0-9]+$/i) === -1) {
                             o.delete_text(position, new_text_length);
                             return Clutter.EVENT_STOP;
@@ -271,17 +271,17 @@ var ObjectEditorDialog = GObject.registerClass({
                             track_hover: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL});
                         this._propertyBoxes[i].add(this._propertyBoxes[i]._boolBox[n], { expand: true, reactive: true,
                             track_hover: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL });
-                        
+
                         // Label
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage = new St.Label();
                         value[subobjectKey] ? this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.set_style_class_name('label-enabled') :
                                                  this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('label-disabled');
-                        
-                        this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('uri-element-label')                        
+
+                        this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('uri-element-label')
                         //this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.clutter_text.set_line_wrap(false);
                         if (!subObjectPropertyOnly) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage, { expand: true });
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.set_text(subObjectPropertyDisplayName);
-                        
+
                         // Toggling Function
                         let togglingFunction = function() {
                             // subObjectToggleValidationCallback will return values to set for any other bool in the subobject and whether to toggle the current one
@@ -289,7 +289,7 @@ var ObjectEditorDialog = GObject.registerClass({
                             if (!boolValues) boolValues = Object.values(value);
                             if (allowed) boolValues[n] = value[subobjectKey] = value[subobjectKey] ? false : true;
                             this._propertyBoxes[i]._boolBox.forEach(function(box, x) {
-                                if(boolValues[x]) { 
+                                if(boolValues[x]) {
                                     value[Object.keys(value)[x]] = boolValues[x];
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.remove_style_class_name('label-disabled');
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.add_style_class_name('label-enabled');
@@ -299,7 +299,7 @@ var ObjectEditorDialog = GObject.registerClass({
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.remove_style_class_name('label-enabled');
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.add_style_class_name('label-disabled');
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxEditorElement.actor.set_checked(boolValues[x]);
-                                }                
+                                }
                             }, this);
                         };
 
@@ -316,7 +316,7 @@ var ObjectEditorDialog = GObject.registerClass({
                 } else if (Array.isArray(value)) {
                     //TO DO Array editor
                 }
-                
+
                 if (!this._propertyBoxes[i]._propertyBoxEditorElement) return;
                 if (this._propertyBoxes[i]._propertyBoxEditorElement.showIcon) {
                     this._propertyBoxes[i]._propertyBoxEditorElement.propertyBoxStElementIcon = new St.Icon({ icon_name: 'insert-object-symbolic', icon_size: 14, style_class: 'object-dialog-error-icon' });
