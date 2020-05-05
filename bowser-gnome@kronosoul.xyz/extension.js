@@ -24,24 +24,21 @@ const ExtensionSystem = imports.ui.extensionSystem;
 const ByteArray = imports.byteArray;
 const { Meta, GLib, Gio, Clutter, St, Shell, Soup } = imports.gi;
 const { extensionUtils, util } = imports.misc;
-const GioSSS = Gio.SettingsSchemaSource;
 const Gettext = imports.gettext;
 const _ = Gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { utils, fileUtils, uiUtils, panelIndicator } = Me.imports;
-const dev = Me.imports.devUtils;
-const scopeName = "bowserExtension";
+const { dev, utils, fileUtils, uiUtils, panelIndicator } = Me.imports;
 
 function init() {
     extensionUtils.initTranslations();
-    dev.log(scopeName+'.'+arguments.callee.name, "@```````````````````````````````````|");
+    dev.log(arguments.callee.name+'();');
 }
 
 function enable() {
     try {
-    dev.log(scopeName+'.'+arguments.callee.name, "@---------------------------------|");
+    dev.log(arguments.callee.name+'()');
     if (Me.bowserIndicator) return; // Already initialized
 
     // Setup global access
@@ -69,16 +66,16 @@ function enable() {
     // Spawn indicator
     Me.bowserIndicator = new panelIndicator.BowserIndicator();
     Main.panel.addToStatusArea('BowserIndicator', Me.bowserIndicator, 1);
-    dev.log(scopeName+'.'+arguments.callee.name, "@~................................|");
+    dev.log(arguments.callee.name+'()', ";");
     } catch(e) { dev.log(e); }
 }
 function disable() {
     try {
-    dev.log(scopeName+'.'+arguments.callee.name, "!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|");
+    dev.log(arguments.callee.name+'()');
     if (Me.bowserIndicator) Me.bowserIndicator.destroy(); delete Me.bowserIndicator;
     if (Me.fileMonitor) Me.fileMonitor.disconnect(Me.fileChangedId); delete Me.fileMonitor;
     if (Me.extensionChangedHandler) ExtensionSystem.disconnect(extensionChangedHandler);
-    dev.log(scopeName+'.'+arguments.callee.name, "!^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^|"+'\r\n');
+    dev.log(arguments.callee.name+'()', ";");
     } catch(e) { dev.log(e); }
 }
 // 3.0 API backward compatibility

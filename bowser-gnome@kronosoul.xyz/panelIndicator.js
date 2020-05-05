@@ -28,8 +28,7 @@ const _ = Gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
-const { utils, fileUtils, uiUtils } = Me.imports;
-const dev = Me.imports.devUtils;
+const { dev, utils, fileUtils, uiUtils } = Me.imports;
 
 // Constants
 const INDICATOR_ICON = 'web-browser-symbolic';

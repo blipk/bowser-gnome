@@ -26,11 +26,10 @@ const _ = Gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
-const utils = Me.imports.utils;
-const dev = Me.imports.devUtils;
+const dev = Me.imports.dev;
 
 // Directory and file paths for resources
-var RES_PATH = '/org/gnome/Shell/Extensions/kronosoul/Bowser/';
+var RES_PATH = '/org/kronosoul/bowser-gnome-extension/';
 var USER_CONF_DIR = GLib.get_user_config_dir();
 var USER_CACHE_DIR = GLib.get_user_cache_dir();
 var USER_DATA_DIR = GLib.get_user_data_dir();
@@ -43,7 +42,7 @@ var INSTALL_DIR = d.startsWith(GLib.get_user_data_dir())
 var CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
 var PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
-var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.gnome.shell.extensions.bowser-gnome.gresource']);
+var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.kronosoul.bowser-gnome-extension.gresource']);
 var URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
 var PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
 var SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);

@@ -25,14 +25,7 @@ const _ = Gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
-const dev = Me.imports.devUtils;
-
-function textFormatter(text, options = {/*length: 50*/ }) {
-    text = _(text);
-    if (isEmpty(text)) return text;
-    if (options.length) text = truncateString(text, options.length);
-    return text;
-}
+const dev = Me.imports.dev;
 
 //General
 function truncateString(instring, length) {
