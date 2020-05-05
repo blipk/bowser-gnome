@@ -1,8 +1,7 @@
+/* Main */
 .bowser-gnome-indicator-icon {
-    margin: 0px;
-    padding: 0px;
+    margin: 0px; padding: 0px;
 }
-
 .feedback-label {
     font-size: 36px;
     font-weight: bold;
@@ -11,15 +10,12 @@
     border-radius: 5px;
     padding: .5em;
 }
-
-.popup-menu-item .ci-action-btn StIcon {
+.menu-icon-btn StIcon {
     icon-size:16px;
 }
 
-entry:indeterminate {
-    background-color: #20395a;
-}
-
+/* Dialog General */
+entry:indeterminate { background-color: #20395a; }
 .object-dialog {
     padding: 0px;
     margin: 0px;
@@ -27,27 +23,26 @@ entry:indeterminate {
     background-color: rgba(23, 25, 26, 0.95);
     border: 3px solid rgba(238, 238, 236, 0.5);
 }
-.object-dialog .object-dialog-content-box {
+.object-dialog-content-box {
     padding: 24px;
 }
-  .object-dialog .object-dialog-entry {
+.object-dialog-entry {
     width: 20em;
     margin-bottom: 6px;
 }
-  .object-dialog .object-dialog-error-box {
+.object-dialog-error-box {
     padding-top: 16px;
     spacing: 6px;
 }
-  .object-dialog .object-dialog-button-box {
+.object-dialog-button-box {
     padding-top: 1em;
 }
-  .object-dialog .object-dialog-label {
+.object-dialog-label {
     font-size: 12pt;
     font-weight: bold;
     color: #d6d6d1;
     padding-bottom: .4em;
 }
-
 .spacing7 {
     padding-right: 7px;
     spacing: 7px;
@@ -57,19 +52,13 @@ entry:indeterminate {
 .label-enabled { color: white; }
 .label-disabled { color: grey; }
 
-
-
-
-
-
+/* Web Browser Chooser Dialog */
 .browser-dialog {
     padding: 0em;
     margin: 0em;
     color: #eeeeec;
     background-color: rgba(59, 59, 90, 0.7);
-
 }
-
 .browser-dialog-content-box {
     padding: 0em;
     margin: 0em;
@@ -84,18 +73,11 @@ entry:indeterminate {
     background-color: rgba(59, 59, 90, 0.3);}
 .browser-box:focus {
     background-color: rgba(59, 59, 90, .3); }
-
 .browser-label {
     padding-left: 0.3em;
     padding-top: 0.34em;
 }
-.browser-label:active {
-}
-.browser-label:hover {
-}
-.browser-label-icon {
 
-}
 .browser-uri-box {
     padding-left: 1em;
     padding-right: 2em;
