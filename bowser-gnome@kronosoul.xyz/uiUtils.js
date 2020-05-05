@@ -38,7 +38,7 @@ function createIconButton (parentItem, iconNameURI, onClickFn, options) { //St.S
 
     let icon = new St.Icon({icon_name: iconNameURI, style_class: 'system-status-icon' });
     let iconButton = new St.Button({
-        style_class: 'ci-action-btn', x_fill: true, can_focus: true,
+        style_class: 'menu-icon-btn', x_fill: true, can_focus: true,
         child: icon,
 
     });
@@ -49,14 +49,15 @@ function createIconButton (parentItem, iconNameURI, onClickFn, options) { //St.S
     parentItem.iconsButtonsPressIds.push( iconButton.connect('button-press-event', onClickFn) );
 }
 
-//Display a short overlay message on the screen for user feedback etc..
+// Display a short overlay message on the screen for user feedback etc..
 let messages = [];
-function showUserFeedbackMessage(input, overviewMessage=false) {
+function showUserFeedbackMessage(input, style=false) {
     dev.log('User Feedback', input);
-    if (overviewMessage) {
+    if (typeof style === 'boolean' && style == true) {
         Main.overview.setMessage(_(input), { forFeedback: true });
     } else {
-        messages.push(new St.Label({ style_class: 'feedback-label', text: _(input) }));
+        style = {...{ style_class: 'feedback-label', text: _(input) }, ...style};
+        messages.push(new St.Label(style));
         let lastItem = messages.length-1;
         Main.uiGroup.add_actor(messages[lastItem]);
         messages[lastItem].opacity = 255;
@@ -66,13 +67,14 @@ function showUserFeedbackMessage(input, overviewMessage=false) {
     }
 }
 
-//Object Editor Dialog
+// Object Editor Dialog
 var ObjectEditorDialog = GObject.registerClass({
     GTypeName: 'ObjectEditorDialog'
 }, class ObjectEditorDialog extends modalDialog.ModalDialog {
-    _init(dialogInfoTextStyle='', callback=null,
-        editableObject=null, /*object to edit in the editor */
-        editableProperties=[], /* {propertyName: 'Property Display Name', disabled: false, hidden: false, subObjectEditableProperties: editableProperties,  icon: icon-name, hintText: 'Hint text to display for St.Entry', minwidth: 20, subObjectEditableProperties=[]}*/
+    _init(dialogInfoTextStyle = '', 
+        callback = null,
+        editableObject = null,
+        editableProperties=[], 
         buttons = null,
         dialogStyle = null,
         contentLayoutBoxStyleClass = ''
@@ -80,12 +82,8 @@ var ObjectEditorDialog = GObject.registerClass({
 
         if (typeof callback !== 'function') throw TypeError('ObjectEditorDialog._init error: callback must be a function');
         this._callback = callback;
-
-        if (editableObject[1]) {throw TypeError('Array passed to object editor, only supports objects with simple types or sub objects as simple bool/int enums.');}
         this.returnObject = editableObject;
-        this.editableObject = editableObject;
         this._unreferencedObjectCopy = JSON.parse(JSON.stringify(editableObject));
-
 
         try{
         // Initialize dialog with style
@@ -95,22 +93,11 @@ var ObjectEditorDialog = GObject.registerClass({
         this.contentLayout.style_class = contentLayoutBoxStyleClass ? contentLayoutBoxStyleClass : this.contentLayout.style_class;
 
         //Label for our dialog/text field with text about the dialog or a prompt for user text input
-        defaults = { style_class: 'object-dialog-label', text: _((dialogInfoTextStyle.text || dialogInfoTextStyle).toString()), x_align: St.Align.START, y_align: St.Align.START } ;
+        defaults = { style_class: 'object-dialog-label', text: _((dialogInfoTextStyle.text || dialogInfoTextStyle).toString()), x_align: St.Align.MIDDLE, y_align: St.Align.START } ;
         dialogInfoTextStyle = (typeof dialogInfoTextStyle == 'string') ? defaults : {...defaults, ...dialogInfoTextStyle };
         let stLabelUText = new St.Label(dialogInfoTextStyle);
         dialogInfoTextStyle.x_fill = true;
         if (dialogInfoTextStyle.text != '') this.contentLayout.add(stLabelUText, dialogInfoTextStyle);
-
-        //*Error box that will appear to prompt for user validation of input //TO DO
-        this._errorBox = new St.BoxLayout();
-        this.contentLayout.add(this._errorBox, { expand: true });
-        let errorIcon = new St.Icon({ icon_name: 'dialog-error-symbolic', icon_size: 24, style_class: 'object-dialog-error-icon' });
-        this._errorBox.add(errorIcon, { y_align: St.Align.MIDDLE });
-        this._inputError = false;
-        this._errorMessage = new St.Label({ style_class: 'object-dialog-error-label' });
-        this._errorMessage.clutter_text.line_wrap = true;
-        this._errorBox.add(this._errorMessage, { expand: true, x_align: St.Align.START, x_fill: false, y_align: St.Align.MIDDLE, y_fill: false });
-        this._errorBox.hide();
 
         //Action buttons
         this.buttons = Array();
@@ -124,17 +111,17 @@ var ObjectEditorDialog = GObject.registerClass({
             this.buttons[i] = this.addButton(button);
             this.buttons[i].set_reactive(true);
             if (button.style_class) this.buttons[i].add_style_class_name(button.style_class);
+            this.buttons[i].add_style_class_name('object-dialog-button-box');
         }, this);
 
         //Create an area for each property of our object
         this._propertyBoxes = [];
         this.propertyKeys = Array();
         this.propertyValues = Array();
-
         this.propertyDisplayName = Array();
         this.propertyDisabled = Array();
         this.propertyHidden = Array();
-        this.propertyLabelOnly = Array();
+        this.propertyHideElement = Array();
         this.propertyLabelStyle = Array();
         this.propertyBoxStyle = Array();
         this.propertyIconStyle = Array();
@@ -142,32 +129,22 @@ var ObjectEditorDialog = GObject.registerClass({
         this.propertyBoxClickCallbacks = Array();
         if (editableObject) {
             editableObject.forEachEntry(function(key, value, i) {
-                // Options for how to display each property section
+                //Options for how to display each property section
                 this.propertyKeys[i] = key;
                 this.propertyValues[i] = value;
-                this.propertyDisplayName[i] = '';
-                this.propertyDisabled[i] = false;
-                this.propertyHidden[i] = false;
-                this.propertyLabelOnly[i] = false;
-                this.propertyLabelStyle[i] = { style_class: 'spacing7', x_expand: true, y_expand: true, x_align: St.Align.END, y_align: Clutter.ActorAlign.CENTER};
-                this.propertyBoxStyle[i] = {};
-                this.propertyIconStyle[i] = {};
-                this.subObjectMasks[i] = [];
-                this.propertyBoxClickCallbacks[i] = (()=>{ dev.log("Clicked on " + this.propertyDisplayName[i]); });
                 editableProperties.forEach(function(propertyDisplayOption, index) {
                     if (editableProperties[index][key]) {
-                        this.propertyDisplayName[i] = editableProperties[index][key] || this.propertyDisplayName[i]
-
-                        let {disabled, hidden, labelOnly, labelStyle, boxStyle, iconStyle, subObjectEditableProperties, boxClickCallback} = editableProperties[index];
-                        this.propertyDisabled[i] = disabled || this.propertyDisabled[i];
-                        this.propertyHidden[i] = hidden || this.propertyHidden[i];
-                        this.propertyLabelOnly[i] = labelOnly || this.propertyLabelOnly[i];
-                        this.propertyLabelStyle[i] = labelStyle || this.propertyLabelStyle[i];
-                        this.propertyBoxStyle[i] = boxStyle || this.propertyBoxStyle[i];
-                        this.propertyIconStyle[i] = iconStyle || this.propertyIconStyle[i];
-                        this.subObjectMasks[i] = subObjectEditableProperties || this.subObjectMasks[i];
+                        let {disabled, hidden, hideElement, labelStyle, boxStyle, iconStyle, subObjectEditableProperties, boxClickCallback} = editableProperties[index];
+                        this.propertyDisplayName[i] = key ? editableProperties[index][key] || '' : '';
+                        this.propertyDisabled[i] = disabled || false;
+                        this.propertyHidden[i] = hidden || false;
+                        this.propertyHideElement[i] = hideElement || false;
+                        this.propertyLabelStyle[i] = {...{ style_class: 'spacing7', x_expand: true, y_expand: true, x_align: St.Align.END, y_align: Clutter.ActorAlign.CENTER}, ...labelStyle};
+                        this.propertyBoxStyle[i] = boxStyle || {};
+                        this.propertyIconStyle[i] = iconStyle || {};
+                        this.subObjectMasks[i] = subObjectEditableProperties || [];
                         this.propertyBoxClickCallbacks[i] = boxClickCallback || (()=>{ dev.log("Clicked on " + this.propertyDisplayName[i]); });
-                    }
+                    } 
                 }, this);
                 if (this.propertyHidden[i]) return;
 
@@ -202,14 +179,14 @@ var ObjectEditorDialog = GObject.registerClass({
                 //Property value editor element
                 //if (value === undefined) {value = 'empty'};
                 //if (value === null) {value = 'empty'};
-                if (this.propertyLabelOnly[i]) return;
+                if (this.propertyHideElement[i]) return;
                 if (typeof value === 'boolean') {
                     this._propertyBoxes[i]._propertyBoxEditorElement = new CheckBox('');
                     this._propertyBoxes[i]._propertyBoxEditorElement.actor.checked = editableObject[key];
                     this._propertyBoxes[i]._propertyBoxEditorElement.actor.connect('clicked', () => {editableObject[key] = this._propertyBoxes[i]._propertyBoxEditorElement.actor.checked});
                     this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxEditorElement.actor);
                 } else if (typeof value === 'string' || typeof value === 'number') {
-                    this._propertyBoxes[i]._propertyBoxEditorElement = new St.Entry({ style_class: 'object-dialog-label', can_focus: true, text: '', x_align: Clutter.ActorAlign.FILL, x_expand: true});
+                    this._propertyBoxes[i]._propertyBoxEditorElement = new St.Entry({ style_class: 'object-dialog-entry', can_focus: true, text: '', x_align: Clutter.ActorAlign.FILL, x_expand: true});
                     this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.min_width = 200;
                     this._focusElement = this._propertyBoxes[i]._propertyBoxEditorElement;  // To set initial focus
                     if (this.propertyDisabled[i] === true) {
@@ -249,24 +226,24 @@ var ObjectEditorDialog = GObject.registerClass({
                     value.forEachEntry(function(subobjectKey, subobjectValue, n){
                         // Set up display masks for the subobject properties
                         let subObjectPropertyDisplayName = key;
-                        let subObjectPropertyDisabled = false;   // TODO
+                        let subObjectPropertyDisabled = false; 
                         let subObjectPropertyHidden = false;
-                        let subObjectLabelOnly = false;
-                        let subObjectPropertyOnly = false;
+                        let subObjectHideElement = false;
+                        let subObjectHideLabel = false;
                         let subObjectToggleValidationCallback = (()=>{return [true];});
                         this.subObjectMasks[i].forEach(function(propertyMask, index) {
                             if (this.subObjectMasks[i][index][subobjectKey]) {
                                 subObjectPropertyDisplayName = this.subObjectMasks[i][index][subobjectKey] || subObjectPropertyDisplayName;
                                 subObjectPropertyDisabled = this.subObjectMasks[i][index].disabled || subObjectPropertyDisabled;
                                 subObjectPropertyHidden = this.subObjectMasks[i][index].hidden || false;
-                                subObjectLabelOnly = this.subObjectMasks[i][index].labelOnly || subObjectLabelOnly;
-                                subObjectPropertyOnly = this.subObjectMasks[i][index].propertyOnly || subObjectPropertyOnly;
+                                subObjectHideElement = this.subObjectMasks[i][index].hideElement || subObjectHideElement;
+                                subObjectHideLabel = this.subObjectMasks[i][index].hideLabel || subObjectHideLabel;
                                 subObjectToggleValidationCallback = this.subObjectMasks[i][index].toggleValidationCallback || subObjectToggleValidationCallback;
                             }
                         }, this);
                         if (subObjectPropertyHidden) return;
 
-                        //Vertical box area for each subobject property
+                        // Vertical box area for each subobject property
                         this._propertyBoxes[i]._boolBox[n] = new St.BoxLayout({ vertical: true, reactive: true,
                             track_hover: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL});
                         this._propertyBoxes[i].add(this._propertyBoxes[i]._boolBox[n], { expand: true, reactive: true,
@@ -278,8 +255,7 @@ var ObjectEditorDialog = GObject.registerClass({
                                                  this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('label-disabled');
 
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('uri-element-label')
-                        //this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.clutter_text.set_line_wrap(false);
-                        if (!subObjectPropertyOnly) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage, { expand: true });
+                        if (!subObjectHideLabel) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage, { expand: true });
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.set_text(subObjectPropertyDisplayName);
 
                         // Toggling Function
@@ -308,60 +284,27 @@ var ObjectEditorDialog = GObject.registerClass({
                         this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.set_x_align(St.Align.MIDDLE);
                         this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor.checked = value[subobjectKey];
                         this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor.connect('clicked', () => { togglingFunction.call(this); });
-                        if (!subObjectLabelOnly) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor);
+                        if (!subObjectHideElement) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor);
                         // Toggle when pressing anywhere in the label/checkbox parent BoxLayout
                         this._propertyBoxes[i]._boolBox[n].connect('button-press-event', () => { togglingFunction.call(this); });
 
                     }, this);
                 } else if (Array.isArray(value)) {
-                    //TO DO Array editor
-                }
-
-                if (!this._propertyBoxes[i]._propertyBoxEditorElement) return;
-                if (this._propertyBoxes[i]._propertyBoxEditorElement.showIcon) {
-                    this._propertyBoxes[i]._propertyBoxEditorElement.propertyBoxStElementIcon = new St.Icon({ icon_name: 'insert-object-symbolic', icon_size: 14, style_class: 'object-dialog-error-icon' });
-                    if (this._propertyBoxes[i]._propertyBoxEditorElement.add) this._propertyBoxes[i]._propertyBoxEditorElement.add(this._propertyBoxes[i].propertyBoxStElementIcon, { y_align: St.Align.MIDDLE });
+                    // TO DO Array editor
+                    // Place sub objects into arrays to create buttons to have them open in another editor dialog instance
                 }
             }, this);
-
         }
 
         this.open();    // Consider having this called from dialog instance origin to ease object reference workflow
         } catch(e) { dev.log(e); }
     }
-
     open() {
-        this._errorBox.hide();
-        this._inputError = false;
         super.open(global.get_current_time(), true);
         if (this._focusElement) this._focusElement.grab_key_focus();
     }
-    close(cancel = false, parent = null) {
-        try {
+    close() {
         this._callback(this.returnObject);
         super.close();
-        } catch(e) { dev.log(e); }
-    }
-    _checkInput(text) {
-        this._inputError = false;
-        if (text === '') this._showError("Input required");
-    }
-    _showError(message) {
-        try {
-        this._inputError = true;
-        this._errorMessage.set_text(message);
-
-        if (!this._errorBox.visible) {
-            let [errorBoxMinHeight, errorBoxNaturalHeight] = this._errorBox.get_preferred_height(-1);
-            let parentActor = this._errorBox.get_parent();
-            tweener.addTween(parentActor,
-                             { height: parentActor.height + errorBoxNaturalHeight, time: DIALOG_GROW_TIME, transition: 'easeOutQuad',
-                               onComplete: () => {
-                                   parentActor.set_height(-1);
-                                   this._errorBox.show();
-                               }
-                             });
-        }
-        } catch (e) {logError(e); dev.log(e);}
     }
 });

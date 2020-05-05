@@ -115,12 +115,11 @@ function _installbowser() {
 
     // Install icon resources
     if (!fileUtils.checkExists([fileUtils.PNG_ICON_FILE]))
-        fileUtils.installResource("res/bowser.png", fileUtils.RES_PNG_ICON_FILE);
-        util.spawnCommandLine("xdg-icon-resource install --novendor --context apps --size 256 "+fileUtils.RES_PNG_ICON_FILE+" bowser");
+        fileUtils.installResource("res/bowser.png", fileUtils.PNG_ICON_FILE);
+        util.spawnCommandLine("xdg-icon-resource install --novendor --context apps --size 256 "+fileUtils.PNG_ICON_FILE+" bowser");
 
     if (!fileUtils.checkExists([fileUtils.SVG_ICON_FILE])) // xdg-icon-resource does not accept svg
         fileUtils.installResource("res/bowser.svg", fileUtils.SVG_ICON_FILE);
-        Gio.file_new_for_path(fileUtils.RES_SVG_ICON_FILE).copy(Gio.file_new_for_path(fileUtils.SVG_ICON_FILE), Gio.FileCopyFlags.OVERWRITE, null, null)
 
     util.spawnCommandLine("gtk-update-icon-cache -f ~/.local/share/icons/hicolor --ignore-theme-index");
     } catch(e) { dev.log(e); }
@@ -277,7 +276,7 @@ function spawnUnmatchedURIDialog() {
             }
             return [allowed, boolValues];
     }
-    let uriOptionsEditables = [{labelOnly: true, toggleValidationCallback: uriOptionsValidation, }];
+    let uriOptionsEditables = [{hideElement: true, toggleValidationCallback: uriOptionsValidation, }];
     uriOptionsEditables.push(Object.assign({authority: splitURI['authorityTrim'] || ' ', hidden: (splitURI['authorityTrim']=='')}, uriOptionsEditables[0]));
     uriOptionsEditables.push(Object.assign({path: splitURI['path'] || ' ', hidden: (splitURI['path']=='')}, uriOptionsEditables[0]));
     uriOptionsEditables.push(Object.assign({query: splitURI['query'] || ' ', hidden: (splitURI['query']=='')}, uriOptionsEditables[0]));
@@ -289,7 +288,7 @@ function spawnUnmatchedURIDialog() {
 
         editables[i+1] = {[browserAppKey]: browserAppValue[0],
                         iconStyle: {style_class: 'browser-label-icon', icon_size: 42, icon_name: browserAppValue[3] ? browserAppValue[3] : 'web-browser-sybmolic'},
-                        labelOnly: true,
+                        hideElement: true,
                         labelStyle: {style_class: 'browser-label', x_align: St.Align.START, y_align: St.Align.MIDDLE},
                         boxStyle: {style_class: 'browser-box', reactive: true, can_focus: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL},
                         };
@@ -305,7 +304,7 @@ function spawnUnmatchedURIDialog() {
                 if (key == 'authorityTrim' && outURI.substr(0, 4) == 'www.') outURI = outURI.substring(4, outURI.length);
             }, this);
 
-            let uriOptions = {'scheme': false, 'authority': this.editableObject.uriOptions.authority || false, 'path': this.editableObject.uriOptions.path || false, 'query': this.editableObject.uriOptions.query || false, 'fragment': this.editableObject.uriOptions.fragment || false}
+            let uriOptions = {'scheme': false, 'authority': this.editableObject.uriOptions.authority || false, 'path': this.editableObject.uriOptions.path || false, 'query': this.editableObject.uriOptions.query || false, 'fragment': this.editableObject.uriOptions.fragment || false, pageTitle: false, pageContents: false}
             Me.config.uriPrefs[outURI] = {'defaultBrowser': this.propertyKeys[i], 'uriOptions': uriOptions};
             saveConfiguration();
 
@@ -320,10 +319,9 @@ function spawnUnmatchedURIDialog() {
         };
     }, this);
 
-    let dialogInfoTextStyle = { style_class: 'object-dialog-label', text: '', x_align: St.Align.MIDDLE, y_align: St.Align.START }
     let dialogStyle = { styleClass: 'browser-dialog', destroyOnClose: true };
     let buttonStyles = [{ label: "Cancel", key: Clutter.KEY_Escape, style_class: 'browser-dialog-buttons' }];
-    let createRuleDialog = new uiUtils.ObjectEditorDialog(dialogInfoTextStyle, (returnObject) => {
+    let createRuleDialog = new uiUtils.ObjectEditorDialog('', (returnObject) => {
             if (!returnObject.ruleCreated) Me.URIs.shift();
             if (Me.URIs.length > 0) spawnUnmatchedURIDialog(Me.URIs);
             return;

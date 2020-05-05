@@ -260,9 +260,9 @@ var BowserIndicator = GObject.registerClass({
         Object.assign(editable, JSON.parse(JSON.stringify(menuItem.prefvalue)));
         let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}, {pageContents: ' ', pageTitle: ' ', hidden: true}]
         editable.extras = {pageTitle: menuItem.prefvalue.uriOptions.pageTitle};
-        let extrasEdiables = [{pageTitle: ' ', propertyOnly: true}];
+        let extrasEdiables = [{pageTitle: ' ', hideLabel: true}];
         editable.extras2 = {pageContents: menuItem.prefvalue.uriOptions.pageContents};
-        let extrasEdiables2 = [{pageContents: ' ', propertyOnly: true}];
+        let extrasEdiables2 = [{pageContents: ' ', hideLabel: true}];
 
         let editables = [{searchText: 'Text to search for: '}, {defaultBrowser: ' ', hidden: true},
                 {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables},
@@ -296,8 +296,8 @@ var BowserIndicator = GObject.registerClass({
         let editable = {'searchText': '', uriOptions: {'scheme': false, 'authority': true, 'path': false, 'query': false, 'fragment': false}, extras: {pageTitle: false}, extras2: {pageContents: false}};
         let uriOptionsEditables = [{scheme: 'http://', authority: 'example.com', path: '/path/in.html', query: '?name=value', fragment: '#bookmark'}]
         let editables = [{searchText: 'Text to search for: '}, {uriOptions: ' ', subObjectEditableProperties: uriOptionsEditables},
-                                    {extras: 'Search Page Title:', subObjectEditableProperties: [{pageTitle: ' ', propertyOnly: true}]},
-                                    {extras2: 'Search Page Contents:', subObjectEditableProperties: [{pageContents: ' ', propertyOnly: true}]}];
+                                    {extras: 'Search Page Title:', subObjectEditableProperties: [{pageTitle: ' ', hideLabel: true}]},
+                                    {extras2: 'Search Page Contents:', subObjectEditableProperties: [{pageContents: ' ', hideLabel: true}]}];
         let buttonStyles = [ { label: "Cancel", key: Clutter.KEY_Escape, action: function(){this.returnObject=false, this.close(true)} }, { label: "Done", default: true }];
         let createRuleDialog = new uiUtils.ObjectEditorDialog("Create New Rule ", (returnObject) => {
             if (!returnObject) return;

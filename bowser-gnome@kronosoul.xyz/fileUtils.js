@@ -40,14 +40,11 @@ let d = Gio.File.new_for_path(m[1]).get_parent().get_path();
 var INSTALL_DIR = d.startsWith(GLib.get_user_data_dir())
                         ? GLib.build_pathv('/', [USER_DATA_DIR, 'gnome-shell', 'extensions', Me.uuid])
                         : GLib.build_pathv('/', ['usr', 'share', 'gnome-shell', 'extensions', Me.uuid]);
-var RES_DIR = GLib.build_pathv('/', [INSTALL_DIR, 'res']);
 var CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
 var PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
 var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.gnome.shell.extensions.bowser-gnome.gresource']);
 var URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
-var RES_PNG_ICON_FILE =  GLib.build_filenamev([RES_DIR, 'bowser.png']);
-var RES_SVG_ICON_FILE = GLib.build_filenamev([RES_DIR, 'bowser.svg']);
 var PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
 var SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
 
