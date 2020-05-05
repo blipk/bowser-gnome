@@ -18,7 +18,7 @@ git clone https://github.com/blipk/bowser-gnome.git extensions
 
 ###### Clickable installer in the release or run
 ``` bash
-chmod +x _install.sh && ./_install.sh
+chmod +x install.sh && ./install.sh
 ```
 
 ### Usage

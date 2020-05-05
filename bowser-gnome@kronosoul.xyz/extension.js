@@ -88,6 +88,7 @@ function main() {
 
 function _checkBowser() {
     try {
+        _installbowser();
     if (!fileUtils.checkExists([fileUtils.PYBOWSER_EXEC_FILE])) _installbowser();
     else Me.PYBOWSER = true;
 
@@ -97,18 +98,28 @@ function _checkBowser() {
 }
 function _installbowser() {
     try {
+    // Load compiled resources
+    Gio.Resource.load(fileUtils.RES_FILE)._register();
+
     // Create and install XDG Dekstop file
-    fileUtils.saveRawToFile(Me.imports.resources.BOWSERG_DESKTOP_FILE, 'bowser-gnome.desktop', fileUtils.CONF_DIR);
-    if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
+    //if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
+        fileUtils.installResource("res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE);
         GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
 
     if (getxdgDefaultBrowser() != 'bowser-gnome.desktop') setxdgDefaultBrowser('bowser-gnome.desktop');
 
+    // Install D-BUS service
+    if (!fileUtils.checkExists([fileUtils.SERVICE_FILE]))
+        fileUtils.installResource("res/bowser-gnome.service", fileUtils.SERVICE_FILE);
+    
+
     // Install icon resources
     if (!fileUtils.checkExists([fileUtils.PNG_ICON_FILE]))
+        fileUtils.installResource("res/bowser.png", fileUtils.RES_PNG_ICON_FILE);
         util.spawnCommandLine("xdg-icon-resource install --novendor --context apps --size 256 "+fileUtils.RES_PNG_ICON_FILE+" bowser");
 
     if (!fileUtils.checkExists([fileUtils.SVG_ICON_FILE])) // xdg-icon-resource does not accept svg
+        fileUtils.installResource("res/bowser.svg", fileUtils.SVG_ICON_FILE);
         Gio.file_new_for_path(fileUtils.RES_SVG_ICON_FILE).copy(Gio.file_new_for_path(fileUtils.SVG_ICON_FILE), Gio.FileCopyFlags.OVERWRITE, null, null)
 
     util.spawnCommandLine("gtk-update-icon-cache -f ~/.local/share/icons/hicolor --ignore-theme-index");
@@ -116,6 +127,10 @@ function _installbowser() {
 }
 function _enableURIWatcher() {
     try {
+        // TO DO
+        // Create a dbus service daemon that's activated via the desktop file rather than writing/watching the .uris file
+        // gapplication launch org.kronosoul.Bowser <uri>
+        
         // Set up watcher
         let directory = Gio.File.new_for_path(fileUtils.CONF_DIR);
         if (!directory.query_exists(null)) directory.make_directory_with_parents(null);

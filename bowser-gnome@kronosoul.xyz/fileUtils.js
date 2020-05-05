@@ -30,25 +30,33 @@ const utils = Me.imports.utils;
 const dev = Me.imports.devUtils;
 
 // Directory and file paths for resources
+var RES_PATH = '/org/gnome/Shell/Extensions/kronosoul/Bowser/';
 var USER_CONF_DIR = GLib.get_user_config_dir();
 var USER_CACHE_DIR = GLib.get_user_cache_dir();
 var USER_DATA_DIR = GLib.get_user_data_dir();
 var SYS_DATA_DIRS = GLib.get_system_data_dirs();
-var INSTALL_DIR = GLib.build_pathv('/', [USER_DATA_DIR, 'gnome-shell', 'extensions', Me.uuid]);
-var RES_DIR = GLib.build_pathv('/', [INSTALL_DIR, 'res'])
+let m = /@(.+):\d+/.exec((new Error()).stack.split('\n')[1]);
+let d = Gio.File.new_for_path(m[1]).get_parent().get_path();
+var INSTALL_DIR = d.startsWith(GLib.get_user_data_dir())
+                        ? GLib.build_pathv('/', [USER_DATA_DIR, 'gnome-shell', 'extensions', Me.uuid])
+                        : GLib.build_pathv('/', ['usr', 'share', 'gnome-shell', 'extensions', Me.uuid]);
+var RES_DIR = GLib.build_pathv('/', [INSTALL_DIR, 'res']);
 var CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
 var PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
+var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.gnome.shell.extensions.bowser-gnome.gresource']);
 var URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
 var RES_PNG_ICON_FILE =  GLib.build_filenamev([RES_DIR, 'bowser.png']);
 var RES_SVG_ICON_FILE = GLib.build_filenamev([RES_DIR, 'bowser.svg']);
 var PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
 var SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
 
-var DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser-gnome.desktop']);
+var DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/applications/bowser-gnome.desktop']);
 var PYBOWSER_DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser.desktop']);
 var PYBOWSER_CONF_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.conf']);
 var PYBOWSER_EXEC_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.py']);
+
+var SERVICE_FILE = GLib.build_filenamev([USER_DATA_DIR, 'dbus-1', 'services', 'bowser-gnome.service']);
 
 function checkExists(path) {
     let result = false;
@@ -191,4 +199,36 @@ function loadJSObjectFromFile(filename=BOWSER_CONF_FILE, directory=CONF_DIR, cal
     }
 
     return jsobject;
+}
+
+
+// Compiled resource management
+function installFile(target, contents) {
+    try {
+        let filename = GLib.build_filenamev([target]);
+        GLib.mkdir_with_parents(GLib.path_get_dirname(target), 0o755);
+        return GLib.file_set_contents(filename, contents);
+    } catch (e) {
+        dev.log(e);
+        return false;
+    }
+}
+
+function installResource(src, target) {
+    try {
+        let bytes = Gio.resources_lookup_data(
+            GLib.build_filenamev([RES_PATH, src]),
+            Gio.ResourceLookupFlags.NONE
+        );
+
+        let source = ByteArray.toString(bytes.toArray());
+
+        let contents = source.replace('@INSTALLDIR@', INSTALL_DIR)
+                             .replace('@CONFDIR@', CONF_DIR);
+
+        return installFile(target, contents);
+    } catch (e) {
+        dev.log(e);
+        return false;
+    }
 }
