@@ -23,27 +23,23 @@ const Me = imports.misc.extensionUtils.getCurrentExtension();
 const { utils, fileUtils } = Me.imports;
 const _debug_ = true;
 
-function printJSON(object) {
-    return JSON.stringify(object, null, 2);
-}
 function log(context, message) {
     if (!_debug_) return;
-
-    if (message === undefined) {message = context; context = "()=>";}
-    if (message === undefined) {message = "UNDEFINED object"}
+    if (message === undefined) {message = context; context = "() =>";}
+    if (message === undefined) {message = "UNDEFINED value"}
     if (message === null) {message = "NULL value"}
 
     let timestamp = new Date().toLocaleString();
-    let prefix = timestamp + '  -  ' + Me.uuid.toString() + " | ";
+    let prefix =  '(' + Me.uuid.toString() + ') [' + timestamp + ']:';
     let out = prefix;
 
     if (message instanceof Error) {
-        out += "!ERROR!   |- " + context.toString() + " | " + '\r\n' + "|-" + message.name +" "+ message.message + '\r\n' + "|-Stack Trace:" + '\r\n' + message.stack + '\r\n';
+        out += "!Error   | " + context.toString() + " | " + '\r\n' + "|-" + message.name +" "+ message.message + '\r\n' + "|-Stack Trace:" + '\r\n' + message.stack + '\r\n';
     } else if (typeof message === 'object') {
-        out += "OBJLog    |- " + context.toString() + " | " + message.toString() + '\r\n';
-        out += printJSON(message) + '\r\n\r\n';
+        out += "@Object  | " + context.toString() + " | " + message.toString() + '\r\n';
+        out += JSON.stringify(message, null, 2) + '\r\n\r\n';
     } else {
-        out += "DebugInfo |- " + context.toString() + " | " + message.toString() + '\r\n';
+        out += ":Info    | " + context.toString() + " | " + message.toString() + '\r\n';
     }
 
     global.log(out);
