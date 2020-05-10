@@ -1,35 +1,40 @@
 /*
+ * Customised Workspaces extension for Gnome 3
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
- * Copyright (C) 2020 A.D. - http://kronosoul.xyz
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope this it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 // External imports
 const ByteArray = imports.byteArray;
 const { GLib, Gio, Shell } = imports.gi;
-const Gettext = imports.gettext;
-const _ = Gettext.domain('bowser-gnome').gettext;
+const _ = imports.gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const dev = Me.imports.dev;
 
 // Directory and file paths for resources
-var RES_PATH = '/org/kronosoul/bowser-gnome-extension/';
+var RES_PATH = Me.metadata['resource-path'];
 var USER_CONF_DIR = GLib.get_user_config_dir();
 var USER_CACHE_DIR = GLib.get_user_cache_dir();
 var USER_DATA_DIR = GLib.get_user_data_dir();
@@ -42,7 +47,7 @@ var INSTALL_DIR = d.startsWith(GLib.get_user_data_dir())
 var CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
 var PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
-var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.kronosoul.bowser-gnome-extension.gresource']);
+var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.kronosoul.Bowser.gresource']);
 var URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
 var PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
 var SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
@@ -52,7 +57,7 @@ var PYBOWSER_DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applica
 var PYBOWSER_CONF_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.conf']);
 var PYBOWSER_EXEC_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.py']);
 
-var SERVICE_FILE = GLib.build_filenamev([USER_DATA_DIR, 'dbus-1', 'services', 'bowser-gnome.service']);
+var SERVICE_FILE = GLib.build_filenamev([USER_DATA_DIR, 'dbus-1', 'services', 'org.kronosoul.Bowser.service']);
 
 function checkExists(path) {
     let result = false;

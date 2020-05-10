@@ -1,4 +1,4 @@
 #!/bin/bash
 ./_package.sh
-./bowser-gnome@kronosoul.xyz/install.sh
+./install.sh
 dbus-run-session -- gnome-shell --nested --wayland

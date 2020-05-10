@@ -1,31 +1,36 @@
 /*
+ * Customised Workspaces extension for Gnome 3
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
- * Copyright (C) 2020 A.D. - http://kronosoul.xyz
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope this it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 // External imports
 const Main = imports.ui.main;
-const ExtensionSystem = imports.ui.extensionSystem;
+const extensionSystem = imports.ui.extensionSystem;
 const ByteArray = imports.byteArray;
-const { Meta, GLib, Gio, Clutter, St, Shell, Soup } = imports.gi;
+const { GLib, Gio, Clutter, St, Shell, Soup } = imports.gi;
 const { extensionUtils, util } = imports.misc;
-const Gettext = imports.gettext;
-const _ = Gettext.domain('bowser-gnome').gettext;
+const _ = imports.gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
@@ -57,7 +62,7 @@ function enable() {
     Me.PYBOWSER = false;
 
     // For older versions of Gnome-Shell
-    if (ExtensionSystem.connect) Me.extensionChangedHandler = ExtensionSystem.connect('extension-state-changed', enable);
+    if (extensionSystem.connect) Me.extensionChangedHandler = extensionSystem.connect('extension-state-changed', enable);
 
     // Check/install status then start watching
     _checkBowser();
@@ -74,7 +79,7 @@ function disable() {
     dev.log(arguments.callee.name+'()');
     if (Me.bowserIndicator) Me.bowserIndicator.destroy(); delete Me.bowserIndicator;
     if (Me.fileMonitor) Me.fileMonitor.disconnect(Me.fileChangedId); delete Me.fileMonitor;
-    if (Me.extensionChangedHandler) ExtensionSystem.disconnect(extensionChangedHandler);
+    if (Me.extensionChangedHandler) extensionSystem.disconnect(extensionChangedHandler);
     dev.log(arguments.callee.name+'()', ";");
     } catch(e) { dev.log(e); }
 }
@@ -85,10 +90,8 @@ function main() {
 
 function _checkBowser() {
     try {
-        _installbowser();
-    if (!fileUtils.checkExists([fileUtils.PYBOWSER_EXEC_FILE])) _installbowser();
-    else Me.PYBOWSER = true;
-
+    _installbowser();
+    if (fileUtils.checkExists([fileUtils.PYBOWSER_EXEC_FILE])) Me.PYBOWSER = true;
     if (!fileUtils.checkExists([fileUtils.PYBOWSER_CONF_FILE])) makeConfiguration();
     loadConfiguration();
     } catch(e) { dev.log(e); }
@@ -99,7 +102,7 @@ function _installbowser() {
     Gio.Resource.load(fileUtils.RES_FILE)._register();
 
     // Create and install XDG Dekstop file
-    //if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
+    if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
         fileUtils.installResource("res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE);
         GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
 
@@ -107,7 +110,7 @@ function _installbowser() {
 
     // Install D-BUS service
     if (!fileUtils.checkExists([fileUtils.SERVICE_FILE]))
-        fileUtils.installResource("res/bowser-gnome.service", fileUtils.SERVICE_FILE);
+        fileUtils.installResource("res/org.kronosoul.Bowser.service", fileUtils.SERVICE_FILE);
     
 
     // Install icon resources
@@ -123,10 +126,6 @@ function _installbowser() {
 }
 function _enableURIWatcher() {
     try {
-        // TO DO
-        // Create a dbus service daemon that's activated via the desktop file rather than writing/watching the .uris file
-        // gapplication launch org.kronosoul.Bowser <uri>
-        
         // Set up watcher
         let directory = Gio.File.new_for_path(fileUtils.CONF_DIR);
         if (!directory.query_exists(null)) directory.make_directory_with_parents(null);
@@ -186,9 +185,10 @@ function processURIs() {
         if (!cancel) openBrowser();
     } catch(e) { dev.log(e); }
 }
-function openBrowser() {
+function openBrowser(overrideURI) {
     try {
     let URI = Me.URIs[0];
+    if (overrideURI) URI = overrideURI;
     let matchFound = false;
     let matchedBrowsers = Array();
     let splitURI = utils.splitURI(URI);
