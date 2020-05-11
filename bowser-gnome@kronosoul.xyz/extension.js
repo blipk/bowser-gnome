@@ -109,8 +109,8 @@ function _installbowser() {
     if (getxdgDefaultBrowser() != 'bowser-gnome.desktop') setxdgDefaultBrowser('bowser-gnome.desktop');
 
     // Install D-BUS service
-    if (!fileUtils.checkExists([fileUtils.SERVICE_FILE]))
-        fileUtils.installResource("res/org.kronosoul.Bowser.service", fileUtils.SERVICE_FILE);
+    //if (!fileUtils.checkExists([fileUtils.SERVICE_FILE]))
+     //   fileUtils.installResource("res/org.kronosoul.Bowser.service", fileUtils.SERVICE_FILE);
     
 
     // Install icon resources
@@ -126,6 +126,74 @@ function _installbowser() {
 }
 function _enableURIWatcher() {
     try {
+        let basicAction = new Gio.SimpleAction({
+            name: 'basicAction'
+        });
+
+        basicAction.connect('activate', (action, parameter) => {
+            print(`${action.name} activated!`);
+        });
+
+        // An action with a parameter
+        let paramAction = new Gio.SimpleAction({
+            name: 'paramAction',
+            parameter_type: new GLib.VariantType('s')
+        });
+
+        paramAction.connect('activate', (action, parameter) => {
+            print(`${action.name} activated: ${parameter.unpack()}`);
+        });
+
+        // Adding them to a group
+        let actionGroup = new Gio.SimpleActionGroup();
+        actionGroup.add_action(basicAction);
+        actionGroup.add_action(paramAction);
+
+        // Here is how you export (and unexport) action groups over DBus
+        let connection = Gio.DBus.session;
+        let groupId = connection.export_action_group(
+            '/org/kronosoul/Bowser/Test',
+            actionGroup
+        );
+
+        //connection.unexport_action_group(groupId);
+
+
+
+        /*
+        // Getting a client which implements the GActionGroup interface, but not the
+        // GActionMap interface. In other words you can not add, remove or change the
+        // enabled state of actions remotely, but you can watch for these events and
+        // activate the actions.
+        let remoteGroup = Gio.DBusActionGroup.get(
+            Gio.DBus.session,
+            'org.kronosoul.Bowser.Test',
+            '/org/kronosoul/Bowser/Test'
+        );
+
+        // Watching the group for changes
+        remoteGroup.connect('action-added', (group, action_name) => {
+            print("TEST")
+        });
+
+        remoteGroup.connect('action-removed', (group, action_name) => {
+            print("TEST")
+        });
+
+        remoteGroup.connect('action-enabled-changed', (group, action_name, enabled) => {
+            print("TEST")
+        });
+
+        remoteGroup.connect('action-state-changed', (group, action_name, state) => {
+            print("TEST")
+        });
+
+        // Activating and changing the state of actions.
+        remoteGroup.activate_action('basicAction', null);
+        remoteGroup.activate_action('paramAction', new GLib.Variant('s', 'string'));;
+        /* */
+
+
         // Set up watcher
         let directory = Gio.File.new_for_path(fileUtils.CONF_DIR);
         if (!directory.query_exists(null)) directory.make_directory_with_parents(null);
