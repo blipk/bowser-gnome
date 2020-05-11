@@ -87,7 +87,7 @@ const BowserService = GObject.registerClass({
 
             if (options.contains('openuri')) {
                 let uri = options.lookup_value('openuri', null).unpack();
-                imports.extension.openBrowser(uri);
+                //imports.extension.openBrowser(uri);
                 return 0;
             }
 
