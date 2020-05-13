@@ -87,6 +87,7 @@ var ObjectEditorDialog = GObject.registerClass({
         if (typeof callback !== 'function') throw TypeError('ObjectEditorDialog._init error: callback must be a function');
         this._callback = callback;
         this.returnObject = editableObject;
+        this.editableObject = editableObject;
         this._unreferencedObjectCopy = JSON.parse(JSON.stringify(editableObject));
 
         try{

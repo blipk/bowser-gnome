@@ -5,11 +5,8 @@
 imports.gi.versions.Gdk = '3.0';
 imports.gi.versions.Gtk = '3.0';
 
-const Gdk = imports.gi.Gdk;
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gtk = imports.gi.Gtk;
+// External imports
+const { GObject, GLib, Gtk, Gio, Gdk } = imports.gi;
 
 // Find the root datadir of the extension
 function get_datadir() {
@@ -36,8 +33,15 @@ const BowserService = GObject.registerClass({
     _init() {
         super._init({
             application_id: bowser.app_id,
-            flags: Gio.ApplicationFlags.HANDLES_OPEN
+            flags: (Gio.ApplicationFlags.HANDLES_OPEN |
+                    Gio.ApplicationFlags.NON_UNIQUE)
         });
+
+        const GioSSS = Gio.SettingsSchemaSource;
+        let schemaDir = GLib.build_pathv('/', [bowser.extdatadir, 'schemas']);
+        let schemaSource = GioSSS.new_from_directory(schemaDir, GioSSS.get_default(), false);
+        let schemaObj = schemaSource.lookup(bowser.metadata['settings-schema'], true);
+        this.settings = new Gio.Settings({ settings_schema: schemaObj });
 
         GLib.set_prgname('Bowser');
         GLib.set_application_name('Bowser');
@@ -45,7 +49,6 @@ const BowserService = GObject.registerClass({
         // Command-line
         this._initOptions();
     }
-
    
     _preferences() {
         let proc = new Gio.Subprocess({
@@ -87,7 +90,11 @@ const BowserService = GObject.registerClass({
 
             if (options.contains('openuri')) {
                 let uri = options.lookup_value('openuri', null).unpack();
-                //imports.extension.openBrowser(uri);
+                if (uri == '') uri = '--s';
+                print(`Opening ${uri}`);
+                let currentURIList = JSON.parse(this.settings.get_string('uri-list'));
+                currentURIList.push(uri);
+                this.settings.set_string('uri-list', JSON.stringify(currentURIList));
                 return 0;
             }
 

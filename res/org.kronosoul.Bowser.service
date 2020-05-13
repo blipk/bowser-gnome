@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.kronosoul.Bowser
-Exec=@INSTALLDIR@/bowser.js

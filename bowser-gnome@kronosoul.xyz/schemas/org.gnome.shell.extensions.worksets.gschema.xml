@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="gnome-shell-extensions">
+  <schema id="org.gnome.shell.extensions.Bowser" path="/org/gnome/shell/extensions/Bowser/">
+    <key name="uri-list" type="s">
+      <default>"[]"</default>
+      <summary>JSObject Array containing a list of clicked URIs</summary>
+      <description>Contains the URLs pased via the daemon.</description>
+    </key>
+  </schema>
+</schemalist>
