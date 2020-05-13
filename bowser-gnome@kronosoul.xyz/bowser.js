@@ -70,11 +70,11 @@ const BowserService = GObject.registerClass({
 
         GLib.set_prgname('Bowser');
         GLib.set_application_name('Bowser');
-        
+
         // Command-line
         this._initOptions();
     }
-   
+
     _preferences() {
         let proc = new Gio.Subprocess({
             argv: [bowser.extdatadir + '/bowser-preferences']
@@ -133,4 +133,3 @@ const BowserService = GObject.registerClass({
 });
 
 (new BowserService()).run([imports.system.programInvocationName].concat(ARGV));
-
