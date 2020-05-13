@@ -1,7 +1,7 @@
 /*
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -74,10 +74,10 @@ function showUserFeedbackMessage(input, style=false) {
 var ObjectEditorDialog = GObject.registerClass({
     GTypeName: 'ObjectEditorDialog'
 }, class ObjectEditorDialog extends modalDialog.ModalDialog {
-    _init(dialogInfoTextStyle = '', 
+    _init(dialogInfoTextStyle = '',
         callback = null,
         editableObject = null,
-        editableProperties=[], 
+        editableProperties=[],
         buttons = null,
         dialogStyle = null,
         contentLayoutBoxStyleClass = ''
@@ -148,7 +148,7 @@ var ObjectEditorDialog = GObject.registerClass({
                         this.propertyIconStyle[i] = iconStyle || {};
                         this.subObjectMasks[i] = subObjectEditableProperties || [];
                         this.propertyBoxClickCallbacks[i] = boxClickCallback || (()=>{ dev.log("Clicked on " + this.propertyDisplayName[i]); });
-                    } 
+                    }
                 }, this);
                 if (this.propertyHidden[i]) return;
 
@@ -230,7 +230,7 @@ var ObjectEditorDialog = GObject.registerClass({
                     value.forEachEntry(function(subobjectKey, subobjectValue, n){
                         // Set up display masks for the subobject properties
                         let subObjectPropertyDisplayName = key;
-                        let subObjectPropertyDisabled = false; 
+                        let subObjectPropertyDisabled = false;
                         let subObjectPropertyHidden = false;
                         let subObjectHideElement = false;
                         let subObjectHideLabel = false;

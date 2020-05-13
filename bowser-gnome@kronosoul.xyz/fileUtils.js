@@ -233,7 +233,7 @@ function installResource(src, target) {
         let fileExtension = GLib.path_get_basename(src);
         fileExtension = fileExtension.substring(fileExtension.lastIndexOf('.'))
         let source;
-        if (fileExtension == '.png' || fileExtension == '.jpg' || fileExtension == '.jpeg') // These aren't in UTF-8 format 
+        if (fileExtension == '.png' || fileExtension == '.jpg' || fileExtension == '.jpeg') // These aren't in UTF-8 format
             source = bytes.toArray();
         else  {
             source = ByteArray.toString(bytes.toArray());
