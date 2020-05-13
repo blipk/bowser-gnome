@@ -1,5 +1,4 @@
 /*
- * Customised Workspaces extension for Gnome 3
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * 
@@ -29,14 +28,13 @@ const Main = imports.ui.main;
 const { popupMenu, panelMenu, boxpointer } = imports.ui;
 const { GObject, St, Clutter } = imports.gi;
 const Util = imports.misc.util;
-const _ = imports.gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const { dev, utils, fileUtils, uiUtils } = Me.imports;
+const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
 // Constants
-const INDICATOR_ICON = 'web-browser-symbolic';
 let BOWSER_ENABLED      = false;
 let ASK_ENABLED      = false;
 let MAX_ENTRY_LENGTH     = 50;
@@ -57,7 +55,7 @@ var BowserIndicator = GObject.registerClass({
 
         // Set up menu box to build into
         let hbox = new St.BoxLayout({ style_class: 'panel-status-menu-box bowser-gnome-indicator-hbox' });
-        this.icon = new St.Icon({ icon_name: INDICATOR_ICON, style_class: 'system-status-icon bowser-gnome-indicator-icon', opacity: 140 });
+        this.icon = new St.Icon({ icon_name: 'web-browser-symbolic', style_class: 'system-status-icon bowser-gnome-indicator-icon', opacity: 140 });
         hbox.add_child(this.icon);
         //let buttonText = new St.Label(    {text: (''), y_align: Clutter.ActorAlign.CENTER }   );
         //hbox.add_child(buttonText);

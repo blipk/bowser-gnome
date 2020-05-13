@@ -1,5 +1,4 @@
 /*
- * Customised Workspaces extension for Gnome 3
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * 
@@ -29,11 +28,11 @@ const { GObject, St, Clutter, Gio, GLib } = imports.gi;
 const Main = imports.ui.main;
 const CheckBox  = imports.ui.checkBox.CheckBox;
 const { modalDialog, shellEntry, tweener } = imports.ui;
-const _ = imports.gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const { dev, utils, fileUtils } = Me.imports;
+const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
 //For adding IconButtons on to PanelMenu.MenuItem buttons or elsewhere
 function createIconButton (parentItem, iconNameURI, onClickFn, options) { //St.Side.RIGHT
