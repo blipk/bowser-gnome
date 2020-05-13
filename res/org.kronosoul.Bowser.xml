@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
     <gresource prefix="/org/kronosoul/Bowser">
-    <file compressed="true">res/bowser.png</file>
+    <file>res/bowser.png</file>
     <file compressed="true">res/bowser.svg</file>
     <file>res/bowser-gnome.desktop</file>
-    <file>res/org.kronosoul.Bowser.service</file>
     </gresource>
 </gresources>

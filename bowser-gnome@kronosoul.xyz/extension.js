@@ -2,7 +2,7 @@
  * Customised Workspaces extension for Gnome 3
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -11,7 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -60,6 +60,7 @@ function enable() {
     Me.openBowser = openBowser;
     Me.URIs = Array();
     Me.PYBOWSER = false;
+    Me.settings = extensionUtils.getSettings(Me.metadata['settings-schema']);
 
     // For older versions of Gnome-Shell
     if (extensionSystem.connect) Me.extensionChangedHandler = extensionSystem.connect('extension-state-changed', enable);
@@ -80,6 +81,7 @@ function disable() {
     if (Me.bowserIndicator) Me.bowserIndicator.destroy(); delete Me.bowserIndicator;
     if (Me.fileMonitor) Me.fileMonitor.disconnect(Me.fileChangedId); delete Me.fileMonitor;
     if (Me.extensionChangedHandler) extensionSystem.disconnect(extensionChangedHandler);
+    if (Me.settings) Me.settings.run_dispose(); delete Me.settings;
     dev.log(arguments.callee.name+'()', ";");
     } catch(e) { dev.log(e); }
 }
@@ -92,7 +94,7 @@ function _checkBowser() {
     try {
     _installbowser();
     if (fileUtils.checkExists([fileUtils.PYBOWSER_EXEC_FILE])) Me.PYBOWSER = true;
-    if (!fileUtils.checkExists([fileUtils.PYBOWSER_CONF_FILE])) makeConfiguration();
+    if (!fileUtils.checkExists([fileUtils.BOWSER_CONF_FILE()])) makeConfiguration();
     loadConfiguration();
     } catch(e) { dev.log(e); }
 }
@@ -102,16 +104,13 @@ function _installbowser() {
     Gio.Resource.load(fileUtils.RES_FILE)._register();
 
     // Create and install XDG Dekstop file
-    if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
+    //if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
         fileUtils.installResource("res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE);
         GLib.spawn_command_line_sync("xdg-desktop-menu install "+fileUtils.CONF_DIR+"/bowser-gnome.desktop --novendor");
 
+    // Set as default and set our URI passing script to executable
     if (getxdgDefaultBrowser() != 'bowser-gnome.desktop') setxdgDefaultBrowser('bowser-gnome.desktop');
-
-    // Install D-BUS service
-    //if (!fileUtils.checkExists([fileUtils.SERVICE_FILE]))
-     //   fileUtils.installResource("res/org.kronosoul.Bowser.service", fileUtils.SERVICE_FILE);
-    
+    util.spawn(['chmod', '+x', fileUtils.BOWSER_EXEC_FILE]);
 
     // Install icon resources
     if (!fileUtils.checkExists([fileUtils.PNG_ICON_FILE]))
@@ -126,110 +125,14 @@ function _installbowser() {
 }
 function _enableURIWatcher() {
     try {
-        let basicAction = new Gio.SimpleAction({
-            name: 'basicAction'
-        });
-
-        basicAction.connect('activate', (action, parameter) => {
-            print(`${action.name} activated!`);
-        });
-
-        // An action with a parameter
-        let paramAction = new Gio.SimpleAction({
-            name: 'paramAction',
-            parameter_type: new GLib.VariantType('s')
-        });
-
-        paramAction.connect('activate', (action, parameter) => {
-            print(`${action.name} activated: ${parameter.unpack()}`);
-        });
-
-        // Adding them to a group
-        let actionGroup = new Gio.SimpleActionGroup();
-        actionGroup.add_action(basicAction);
-        actionGroup.add_action(paramAction);
-
-        // Here is how you export (and unexport) action groups over DBus
-        let connection = Gio.DBus.session;
-        let groupId = connection.export_action_group(
-            '/org/kronosoul/Bowser/Test',
-            actionGroup
-        );
-
-        //connection.unexport_action_group(groupId);
-
-
-
-        /*
-        // Getting a client which implements the GActionGroup interface, but not the
-        // GActionMap interface. In other words you can not add, remove or change the
-        // enabled state of actions remotely, but you can watch for these events and
-        // activate the actions.
-        let remoteGroup = Gio.DBusActionGroup.get(
-            Gio.DBus.session,
-            'org.kronosoul.Bowser.Test',
-            '/org/kronosoul/Bowser/Test'
-        );
-
-        // Watching the group for changes
-        remoteGroup.connect('action-added', (group, action_name) => {
-            print("TEST")
-        });
-
-        remoteGroup.connect('action-removed', (group, action_name) => {
-            print("TEST")
-        });
-
-        remoteGroup.connect('action-enabled-changed', (group, action_name, enabled) => {
-            print("TEST")
-        });
-
-        remoteGroup.connect('action-state-changed', (group, action_name, state) => {
-            print("TEST")
-        });
-
-        // Activating and changing the state of actions.
-        remoteGroup.activate_action('basicAction', null);
-        remoteGroup.activate_action('paramAction', new GLib.Variant('s', 'string'));;
-        /* */
-
-
-        // Set up watcher
-        let directory = Gio.File.new_for_path(fileUtils.CONF_DIR);
-        if (!directory.query_exists(null)) directory.make_directory_with_parents(null);
-        let file = Gio.File.new_for_path(fileUtils.URI_FILE);
-        if (!file.query_exists(null)) file.create(Gio.FileCreateFlags.NONE, null);
-
-        let monitorFlags = Gio.FileMonitorFlags.hasOwnProperty("WATCH_MOVES") ?
-            Gio.FileMonitorFlags.WATCH_MOVES : Gio.FileMonitorFlags.SEND_MOVED;
-        Me.fileMonitor = file.monitor_file(monitorFlags, null);
-
-        Me.fileChangedId = Me.fileMonitor.connect("changed", function(monitor, file, other_file, eventType) {
-            let xpath = other_file ? other_file.get_path() : null;
-            let ypath = file ? file.get_path() : null;
-            let filePath;
-            if (xpath != fileUtils.URI_FILE && ypath != fileUtils.URI_FILE) return;
-            if (xpath == fileUtils.URI_FILE) filePath = xpath;
-            if (ypath == fileUtils.URI_FILE) filePath = ypath;
-
-            let outFile = Gio.file_new_for_path(filePath);
-            try {
-            // Get our list of URIs from the dotfile generated by the XDG desktop file
-            let buffer = outFile.load_contents(null);
-            let [length, contents] = buffer;
-            strContents = ByteArray.toString(contents);
-            let lines = strContents.split(/[\r\n]+/); lines.pop();
-
-            // Overwrite the file as URI/s have been read
-            if (lines.length == 0) return;
-            let outstream = outFile.replace(null, false, Gio.FileCreateFlags.NONE, null);
-            outstream.write('', null);
-            outstream.close(null);
-
-            Me.URIs = Me.URIs.concat(lines);
-
+        Me.settings.processing = false;
+        this.uriListSettingsHandler = Me.settings.connect('changed::uri-list', () => {
+            if (Me.settings.processing) return;
+            Me.settings.processing = true;
+            Me.URIs = Me.URIs.concat(JSON.parse(Me.settings.get_string('uri-list')));
+            Me.settings.set_string('uri-list', "[]");
             processURIs();
-            } catch(e) { dev.log(e); }
+            Me.settings.processing = false;
         });
     } catch(e) { dev.log(e); }
 }
@@ -246,7 +149,6 @@ function processURIs() {
                 Me.bowserIndicator.menu.toggle();
                 cancel = true;
                 Me.URIs.shift();
-                //if (Me.URIs.length > 0) spawnUnmatchedURIDialog(Me.URIs); // Process next URI
             }
         }, this);
 
@@ -392,7 +294,7 @@ function spawnUnmatchedURIDialog() {
             return;
     }, editable, editables, buttonStyles, dialogStyle, 'browser-dialog-content-box');
 }
-function loadConfiguration(configObject = null, filename = 'bowser.conf', filedirectory = fileUtils.PYBOWSER_CONF_DIR) {
+function loadConfiguration(configObject = null, filename = 'bowser.conf', filedirectory = fileUtils.BOWSER_CONF_DIR()) {
     try {
     if (!configObject) {
         configObject = fileUtils.loadJSObjectFromFile(filename, filedirectory);
@@ -406,7 +308,7 @@ function loadConfiguration(configObject = null, filename = 'bowser.conf', filedi
     } catch(e) { dev.log(e); }
 }
 
-function saveConfiguration(filename = 'bowser.conf', filedirectory = fileUtils.PYBOWSER_CONF_DIR) {
+function saveConfiguration(filename = 'bowser.conf', filedirectory = fileUtils.BOWSER_CONF_DIR()) {
     try {
     if (utils.isEmpty(Me.config)) return;
     let configCopy = JSON.parse(JSON.stringify(Me.config));
@@ -430,7 +332,7 @@ function makeConfiguration() {
         let obj = {'youtube.com': {'defaultBrowser': Me.config.defaultBrowser, 'uriOptions': tmp}, 'youtu.be': {'defaultBrowser': Me.config.defaultBrowser, 'uriOptions': tmp}}
         Me.config.uriPrefs = JSON.parse(JSON.stringify(obj))
     }
-    saveConfiguration()
+    saveConfiguration();
     } catch(e) { dev.log(e); }
 }
 
@@ -462,11 +364,16 @@ function detectWebBrowsers() {
     else msg = "Bowser has detected changes in your installed web browsers."
 
     Me.config.browserApps = tmpbrowserApps;
-
     if (Me.config.defaultBrowser == '' && (currentBrowser == 'bowser.desktop' || currentBrowser == 'bowser-gnome.desktop'))
         Me.config.defaultBrowser = Object.keys(Me.config.browserApps)[0]
-    else if (Me.config.defaultBrowser == '') Me.config.defaultBrowser = currentBrowser;
+    else if (Me.config.defaultBrowser == '') {
+        Me.config.browserApps.forEachEntry(function(browserApp) {
+            if (browserApp.includes(currentBrowser))
+                Me.config.defaultBrowser = browserApp;
+        }, this);
+    }
 
+    dev.log(Me.config.defaultBrowser);
     saveConfiguration(); loadConfiguration();
     uiUtils.showUserFeedbackMessage(msg, true)
     } catch(e) { dev.log(e); }
@@ -483,7 +390,7 @@ function exportConfiguration() {
             saveConfiguration(fileName, filePath)
 
             uiUtils.showUserFeedbackMessage("Configuration exported to " + resource, true)
-        })
+        });
     } catch(e) { dev.log(e); }
 }
 
