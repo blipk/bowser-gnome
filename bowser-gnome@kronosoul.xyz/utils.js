@@ -1,5 +1,4 @@
 /*
- * Customised Workspaces extension for Gnome 3
  * Bowser extension for Gnome 3
  * This file is part of the Bowser Gnome Extension for Gnome 3
  * 
@@ -26,11 +25,11 @@
 
 // External imports
 const { GLib, Gio } = imports.gi;
-const _ = imports.gettext.domain('bowser-gnome').gettext;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const dev = Me.imports.dev;
+const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
 //General
 function truncateString(instring, length) {

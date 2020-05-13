@@ -3,8 +3,8 @@
   <schema id="org.gnome.shell.extensions.Bowser" path="/org/gnome/shell/extensions/Bowser/">
     <key name="uri-list" type="s">
       <default>"[]"</default>
-      <summary>JSObject Array containing a list of clicked URIs</summary>
-      <description>Contains the URLs pased via the daemon.</description>
+      <summary>Stringified JS Array containing URIs to be opened.</summary>
+      <description>Contains the URLs pased via the desktop entry to bowser.js which are then processed by the extension.</description>
     </key>
   </schema>
 </schemalist>
