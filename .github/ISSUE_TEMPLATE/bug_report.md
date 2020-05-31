@@ -7,7 +7,7 @@ assignees: blipk
 
 ---
 
-**Please include the debug file from ~/.config/bowser-gnome@kronosoul.xyz/debug.log***
+**Please include the debug file from ~/.config/bowser-gnome@kronosoul.xyz/debug.log**
 
 **Describe the bug**
 A clear and concise description of what the bug is.
