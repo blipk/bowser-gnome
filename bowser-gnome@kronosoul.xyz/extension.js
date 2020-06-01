@@ -350,7 +350,7 @@ function detectWebBrowsers() {
         let appPath = app.get_filename();
         let mimeTypes = app.get_string('MimeType').split(';').filter(v => v != "") || [];
         let name = app.get_name() || app.get_display_name() || ' ';
-        let exec = app.get_string("Exec");
+        let exec = app.get_executable() || '';
         let icon = '';
         if (app.get_icon()) icon = app.get_icon().to_string();
 

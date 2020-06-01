@@ -4,7 +4,7 @@
     "url": "https://github.com/blipk/bowser-gnome",
     "description": "Create rules to open specific websites in specific web browsers for links clicked in any application on your computer. (emails, chat etc)",
     "original-author": "admin@kronosoul.xyz",
-    "version": 9,
+    "version": 12,
 
     "extension-id": "bowser-gnome",
     "application-id": "org.kronosoul.Bowser",

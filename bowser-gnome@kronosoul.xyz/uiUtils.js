@@ -97,10 +97,14 @@ var ObjectEditorDialog = GObject.registerClass({
         this.contentLayout.style_class = contentLayoutBoxStyleClass ? contentLayoutBoxStyleClass : this.contentLayout.style_class;
 
         //Label for our dialog/text field with text about the dialog or a prompt for user text input
-        defaults = { style_class: 'object-dialog-label', text: _((dialogInfoTextStyle.text || dialogInfoTextStyle).toString()), x_align: St.Align.MIDDLE, y_align: St.Align.START } ;
+        defaults = { style_class: 'object-dialog-label', text: _((dialogInfoTextStyle.text || dialogInfoTextStyle).toString()), x_align: St.Align.MIDDLE, y_align: St.Align.START, x_expand: true } ;
         dialogInfoTextStyle = (typeof dialogInfoTextStyle == 'string') ? defaults : {...defaults, ...dialogInfoTextStyle };
         let stLabelUText = new St.Label(dialogInfoTextStyle);
+        stLabelUText.get_clutter_text().line_wrap = false;
+        stLabelUText.get_clutter_text().ellipsize = 0;
         dialogInfoTextStyle.x_fill = true;
+        dialogInfoTextStyle.x_expand = true;
+        dialogInfoTextStyle.expand = true;
         if (dialogInfoTextStyle.text != '') this.contentLayout.add(stLabelUText, dialogInfoTextStyle);
 
         //Action buttons
@@ -171,7 +175,8 @@ var ObjectEditorDialog = GObject.registerClass({
                 this._propertyBoxes[i]._propertyBoxMessageButton = new St.Button(this.propertyLabelStyle[i]);
                 this._propertyBoxes[i]._propertyBoxMessage = new St.Label(this.propertyLabelStyle[i]);
                 this._propertyBoxes[i]._propertyBoxMessage.set_text(this.propertyDisplayName[i]);
-                this._propertyBoxes[i]._propertyBoxMessage.clutter_text.line_wrap = false;
+                this._propertyBoxes[i]._propertyBoxMessage.get_clutter_text().line_wrap = false;
+                this._propertyBoxes[i]._propertyBoxMessage.get_clutter_text().ellipsize = 0;
                 this._propertyBoxes[i]._propertyBoxMessageButton.add_actor(this._propertyBoxes[i]._propertyBoxMessage);
                 //this._propertyBoxes[i]._propertyBoxMessageButton.set_label(this.propertyDisplayName[i])
                 //this._propertyBoxes[i]._propertyBoxMessageButton.set_label_actor(this._propertyBoxes[i]._propertyBoxMessage.actor)
@@ -191,17 +196,17 @@ var ObjectEditorDialog = GObject.registerClass({
                     this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxEditorElement.actor);
                 } else if (typeof value === 'string' || typeof value === 'number') {
                     this._propertyBoxes[i]._propertyBoxEditorElement = new St.Entry({ style_class: 'object-dialog-entry', can_focus: true, text: '', x_align: Clutter.ActorAlign.FILL, x_expand: true});
-                    this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.min_width = 200;
+                    this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().min_width = 200;
                     this._focusElement = this._propertyBoxes[i]._propertyBoxEditorElement;  // To set initial focus
                     if (this.propertyDisabled[i] === true) {
-                        this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_editable(false);
-                        this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_selectable(false);
-                        this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.set_max_length(value.length);
+                        this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().set_editable(false);
+                        this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().set_selectable(false);
+                        this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().set_max_length(value.length);
                     }
                     this._propertyBoxes[i]._propertyBoxEditorElement.set_text(value.toString());
                     this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxEditorElement, { y_align: St.Align.END });
 
-                    this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.get_buffer().connect('inserted-text', (o, position, new_text, new_text_length, e) => {
+                    this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().get_buffer().connect('inserted-text', (o, position, new_text, new_text_length, e) => {
                         if (typeof value !== 'number') return Clutter.EVENT_PROPAGATE;
                         if (new_text.search(/^[0-9]+$/i) === -1) {
                             o.delete_text(position, new_text_length);
@@ -209,7 +214,7 @@ var ObjectEditorDialog = GObject.registerClass({
                         }
                         return Clutter.EVENT_PROPAGATE;
                     });
-                    this._propertyBoxes[i]._propertyBoxEditorElement.clutter_text.connect('text-changed', (o, e) => {
+                    this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().connect('text-changed', (o, e) => {
                         if (typeof value === 'number') editableObject[key] = parseInt(o.get_text());
                         else editableObject[key] = o.get_text();
                         return Clutter.EVENT_PROPAGATE;
