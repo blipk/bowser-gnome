@@ -348,7 +348,7 @@ function detectWebBrowsers() {
         if (categories.indexOf("WebBrowser") == -1) return;
 
         let appPath = app.get_filename();
-        let mimeTypes = app.get_string('MimeType').split(';').filter(v => v != "") || [];
+        let mimeTypes = app.get_string('MimeType') ? app.get_string('MimeType').split(';').filter(v => v != "") : [];
         let name = app.get_name() || app.get_display_name() || ' ';
         let exec = app.get_commandline() || '';
         let icon = '';
