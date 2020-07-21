@@ -169,6 +169,7 @@ function openBrowser(overrideURI) {
 
         Me.config.uriPrefs[prefKey].uriOptions.forEachEntry(function(optionKey, optionValue, n) {
             if (!optionValue) return;
+            if (!(optionKey in splitURI) || splitURI[optionKey] == undefined) return;
             if (optionValue && optionKey != 'scheme') compareURI += splitURI[optionKey].toLowerCase();
 
             // Search page titles and contents
