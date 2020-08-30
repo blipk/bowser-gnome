@@ -2,7 +2,7 @@
 
 Create rules to open specific websites in specific web browsers for links clicked in any application on your computer.
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/deltadevelopments)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)]()
 [![Website](https://img.shields.io/badge/Bowser-Homepage-blue)](https://github.com/blipk/Bowser)
 
 ### Installation
