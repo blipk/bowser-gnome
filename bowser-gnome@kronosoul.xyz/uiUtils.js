@@ -27,7 +27,8 @@
 const { GObject, St, Clutter, Gio, GLib } = imports.gi;
 const Main = imports.ui.main;
 const CheckBox  = imports.ui.checkBox.CheckBox;
-const { modalDialog, shellEntry, tweener } = imports.ui;
+const { modalDialog, shellEntry } = imports.ui;
+const tweener = imports.tweener.tweener || imports.ui.tweener;
 
 // Internal imports
 const Me = imports.misc.extensionUtils.getCurrentExtension();
@@ -41,7 +42,7 @@ function createIconButton (parentItem, iconNameURI, onClickFn, options) { //St.S
 
     let icon = new St.Icon({icon_name: iconNameURI, style_class: 'system-status-icon' });
     let iconButton = new St.Button({
-        style_class: 'menu-icon-btn', x_fill: true, can_focus: true,
+        style_class: 'menu-icon-btn', x_align: Clutter.ActorAlign.FILL, can_focus: true,
         child: icon,
 
     });
@@ -102,10 +103,10 @@ var ObjectEditorDialog = GObject.registerClass({
         let stLabelUText = new St.Label(dialogInfoTextStyle);
         stLabelUText.get_clutter_text().line_wrap = false;
         stLabelUText.get_clutter_text().ellipsize = 0;
-        dialogInfoTextStyle.x_fill = true;
+        dialogInfoTextStyle.x_align = Clutter.ActorAlign.FILL;
         dialogInfoTextStyle.x_expand = true;
         dialogInfoTextStyle.expand = true;
-        if (dialogInfoTextStyle.text != '') this.contentLayout.add(stLabelUText, dialogInfoTextStyle);
+        if (dialogInfoTextStyle.text != '') this.contentLayout.add(stLabelUText);
 
         //Action buttons
         this.buttons = Array();
@@ -161,7 +162,7 @@ var ObjectEditorDialog = GObject.registerClass({
                 if (this.propertyIconStyle[i] != undefined && this.propertyIconStyle[i] != {}) {
                     this._propertyBoxes[i].propertyBoxStNameIcon = new St.Icon(this.propertyIconStyle[i]);
                     //this._propertyBoxes[i].propertyBoxStNameIcon.set_translation(50, 50, 0)
-                    this._propertyBoxes[i].add(this._propertyBoxes[i].propertyBoxStNameIcon, this.propertyIconStyle[i]);
+                    this._propertyBoxes[i].add(this._propertyBoxes[i].propertyBoxStNameIcon);
                 }
                 // :hover event doesn't work on style_class elements for BoxLayout, this allows using :focus for hover events
                 this._propertyBoxes[i].connect('enter-event', ()=>{ this._propertyBoxes[i].grab_key_focus();});
@@ -169,7 +170,7 @@ var ObjectEditorDialog = GObject.registerClass({
                 this._propertyBoxes[i].connect('button-press-event', () => {
                     this.propertyBoxClickCallbacks[i].call(this, i);
                 });
-                this.contentLayout.add(this._propertyBoxes[i], this.propertyBoxStyle[i]);
+                this.contentLayout.add(this._propertyBoxes[i]);
 
                 // Left side labelled button
                 this._propertyBoxes[i]._propertyBoxMessageButton = new St.Button(this.propertyLabelStyle[i]);
@@ -183,7 +184,7 @@ var ObjectEditorDialog = GObject.registerClass({
                 this._propertyBoxes[i]._propertyBoxMessageButton.connect('button-press-event', () => {
                     this.propertyBoxClickCallbacks[i].call(this, i);
                 });
-                this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxMessageButton, this.propertyLabelStyle[i]);
+                this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxMessageButton);
 
                 //Property value editor element
                 //if (value === undefined) {value = 'empty'};
@@ -204,7 +205,7 @@ var ObjectEditorDialog = GObject.registerClass({
                         this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().set_max_length(value.length);
                     }
                     this._propertyBoxes[i]._propertyBoxEditorElement.set_text(value.toString());
-                    this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxEditorElement, { y_align: St.Align.END });
+                    this._propertyBoxes[i].add(this._propertyBoxes[i]._propertyBoxEditorElement);
 
                     this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().get_buffer().connect('inserted-text', (o, position, new_text, new_text_length, e) => {
                         if (typeof value !== 'number') return Clutter.EVENT_PROPAGATE;
@@ -255,8 +256,7 @@ var ObjectEditorDialog = GObject.registerClass({
                         // Vertical box area for each subobject property
                         this._propertyBoxes[i]._boolBox[n] = new St.BoxLayout({ vertical: true, reactive: true,
                             track_hover: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL});
-                        this._propertyBoxes[i].add(this._propertyBoxes[i]._boolBox[n], { expand: true, reactive: true,
-                            track_hover: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.FILL });
+                        this._propertyBoxes[i].add(this._propertyBoxes[i]._boolBox[n]);
 
                         // Label
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage = new St.Label();
@@ -264,7 +264,7 @@ var ObjectEditorDialog = GObject.registerClass({
                                                  this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('label-disabled');
 
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.add_style_class_name('uri-element-label')
-                        if (!subObjectHideLabel) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage, { expand: true });
+                        if (!subObjectHideLabel) this._propertyBoxes[i]._boolBox[n].add(this._propertyBoxes[i]._boolBox[n]._boolBoxMessage);
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.set_text(subObjectPropertyDisplayName);
 
                         // Toggling Function
