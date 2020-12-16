@@ -163,6 +163,19 @@ var BowserIndicator = GObject.registerClass({
         // Create iconbuttons on MenuItem
         uiUtils.createIconButton(menuItem, 'document-edit-symbolic', () => {this._editRule(menuItem)});
         uiUtils.createIconButton(menuItem, 'edit-delete-symbolic', () => {this._prefMenuItemRemoveEntry(menuItem); this._refreshMenu();});
+
+        // Update bad browser paths in configs
+        dev.log(menuItem.prefvalue.defaultBrowser)
+        if (!Me.config.browserApps[menuItem.prefvalue.defaultBrowser]) {
+            let x = menuItem.prefvalue.defaultBrowser.lastIndexOf('/');
+            let browser = menuItem.prefvalue.defaultBrowser.substring(x,  menuItem.prefvalue.defaultBrowser.length-8);
+            let newBrowserPath = Object.keys(Me.config.browserApps).filter(k => k.includes(browser));
+
+            if (newBrowserPath[0]) menuItem.prefvalue.defaultBrowser = newBrowserPath[0];
+            else menuItem.prefvalue.defaultBrowser = Object.keys(Me.config.browserApps)[0];
+            Me.saveConfiguration();
+        }
+
         let icon = Me.config.browserApps[menuItem.prefvalue.defaultBrowser][3] ? Me.config.browserApps[menuItem.prefvalue.defaultBrowser][3] : 'web-browser-symbolic';
         menuItem.icon.icon_name = icon;
 
