@@ -12,5 +12,5 @@
     "settings-schema": "org.gnome.shell.extensions.Bowser",
     "settings-path": "/org/gnome/shell/extensions/Bowser/",
     "gettext-domain": "bowser-gnome",
-    "shell-version": ["3.38"]
+    "shell-version": ["3.38", "40", "41", "42", "43"]
 }

@@ -147,7 +147,7 @@ function processURIs() {
                 Me.URIs = Me.URIs.slice(Me.URIs.indexOf(URI), Me.URIs.indexOf(URI)+1);
                 Me.bowserIndicator.menu.toggle();
                 cancel = true;
-                Me.URIs.shift();
+                //Me.URIs.shift();
             }
         }, this);
 
@@ -200,6 +200,7 @@ function openBrowser(overrideURI) {
                 let [success, argv] = GLib.shell_parse_argv(exec);
                 util.spawn(argv);
                 Me.URIs.shift();
+                //if (Me.URIs.length > 0) Me.openBrowser();
             }
         }, this);
     }, this);
