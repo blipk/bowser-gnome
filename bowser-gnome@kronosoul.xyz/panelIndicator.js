@@ -34,6 +34,11 @@ const Me = imports.misc.extensionUtils.getCurrentExtension();
 const { dev, utils, fileUtils, uiUtils } = Me.imports;
 const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
+const { makeConfiguration, loadConfiguration, saveConfiguration,
+    importConfiguration, exportConfiguration,
+    getxdgDefaultBrowser, setxdgDefaultBrowser, detectWebBrowsers,
+    enableBowser,  disableBowser, openBowser } = Me.imports.extension;
+
 // Constants
 let BOWSER_ENABLED      = false;
 let ASK_ENABLED      = false;
@@ -115,9 +120,9 @@ var BowserIndicator = GObject.registerClass({
         this.menu.addMenuItem(settingsMenuItem);
         settingsMenuItem.connect('button_press_event', () => { this._newRule(); });
 
-        if (Me.PYBOWSER) uiUtils.createIconButton(settingsMenuItem, 'document-properties-symbolic', () => {Me.openBowser();});
-        uiUtils.createIconButton(settingsMenuItem, 'document-open-symbolic', () => {Me.importConfiguration(); });
-        uiUtils.createIconButton(settingsMenuItem, 'document-save-symbolic', () => {Me.exportConfiguration(); });
+        if (Me.PYBOWSER) uiUtils.createIconButton(settingsMenuItem, 'document-properties-symbolic', () => {openBowser();});
+        uiUtils.createIconButton(settingsMenuItem, 'document-open-symbolic', () => {importConfiguration(); });
+        uiUtils.createIconButton(settingsMenuItem, 'document-save-symbolic', () => {exportConfiguration(); });
 
         // Add separator
         this.menu.addMenuItem(new popupMenu.PopupSeparatorMenuItem());
@@ -127,15 +132,15 @@ var BowserIndicator = GObject.registerClass({
         try {
         //Remove all and re-add with any changes
         if (utils.isEmpty(Me.config)) return;
-        Me.loadConfiguration();
+        loadConfiguration();
         this._prefMenuItemsRemoveAll();
         Me.config.uriPrefs.forEachEntry(function (prefBufferKey, prefBufferValue, i, prefBufferEntryObj) {
             this._addprefMenuItemEntry(prefBufferEntryObj);
         }, this);
-        Me.saveConfiguration();
+        saveConfiguration();
 
         //Refresh state switches
-        let browser = Me.getxdgDefaultBrowser();
+        let browser = getxdgDefaultBrowser();
         BOWSER_ENABLED = (browser == 'bowser.desktop' || browser == 'bowser-gnome.desktop') ? true : false;
         this.bowserMenuItem.nameText = BOWSER_ENABLED ? "Bowser Enabled" : "Bowser Disabled";
         this._prefMenuItemSetEntryLabel(this.bowserMenuItem);
@@ -165,7 +170,7 @@ var BowserIndicator = GObject.registerClass({
         uiUtils.createIconButton(menuItem, 'edit-delete-symbolic', () => {this._prefMenuItemRemoveEntry(menuItem); this._refreshMenu();});
 
         // Update bad browser paths in configs
-        dev.log(menuItem.prefvalue.defaultBrowser)
+        //dev.log(menuItem.prefvalue.defaultBrowser)
         if (!Me.config.browserApps[menuItem.prefvalue.defaultBrowser]) {
             let x = menuItem.prefvalue.defaultBrowser.lastIndexOf('/');
             let browser = menuItem.prefvalue.defaultBrowser.substring(x,  menuItem.prefvalue.defaultBrowser.length-8);
@@ -173,7 +178,7 @@ var BowserIndicator = GObject.registerClass({
 
             if (newBrowserPath[0]) menuItem.prefvalue.defaultBrowser = newBrowserPath[0];
             else menuItem.prefvalue.defaultBrowser = Object.keys(Me.config.browserApps)[0];
-            Me.saveConfiguration();
+            saveConfiguration();
         }
 
         let icon = Me.config.browserApps[menuItem.prefvalue.defaultBrowser][3] ? Me.config.browserApps[menuItem.prefvalue.defaultBrowser][3] : 'web-browser-symbolic';
@@ -200,7 +205,7 @@ var BowserIndicator = GObject.registerClass({
             menuItem.prefBrowsersMenuItems[i] = new popupMenu.PopupImageMenuItem(_(name), icon);
             menuItem.prefBrowsersMenuItems[i].connect('activate', () => {
                 menuItem.prefvalue.defaultBrowser = browserAppKey;
-                Me.saveConfiguration();
+                saveConfiguration();
                 uiUtils.showUserFeedbackMessage(menuItem.nameText + ' will now open with ' + name, true)
                 this._preferenceBrowserMenuRefresh(menuItem)
                 menuItem.setSubmenuShown(false);
@@ -231,7 +236,7 @@ var BowserIndicator = GObject.registerClass({
             this.webbrowsersMenuItems[i] = new popupMenu.PopupImageMenuItem(_(name), icon);
             this.webbrowsersMenuItems[i].connect('activate', () => {
                 Me.config.defaultBrowser = browserAppKey;
-                Me.saveConfiguration();
+                saveConfiguration();
                 uiUtils.showUserFeedbackMessage(name + ' is now your default browser.', true);
                 this._defaultBrowsersSubMenuRefresh();
                 this.menu.itemActivated(boxpointer.PopupAnimation.NONE);
@@ -243,7 +248,7 @@ var BowserIndicator = GObject.registerClass({
 
         this.detectWebBrowserMenuButton = new popupMenu.PopupImageMenuItem(_("Scan Installed Browsers"), "bowser");
         this.detectWebBrowserMenuButton.connect('activate', () => {
-            Me.detectWebBrowsers()
+            detectWebBrowsers()
             this.menu.itemActivated(boxpointer.PopupAnimation.NONE);
         });
         this.detectWebBrowserMenuButton.setOrnament(popupMenu.Ornament.DOT)
@@ -265,7 +270,7 @@ var BowserIndicator = GObject.registerClass({
         Me.config.uriPrefs = Me.config.uriPrefs.filterObj(([name, value]) => (name !== menuItem.prefkey && value !== menuItem.prefvalue));
         if (showMsg) uiUtils.showUserFeedbackMessage("Deleted rule: " + menuItem.nameText, true);
         menuItem.destroy();
-        Me.saveConfiguration();
+        saveConfiguration();
         this._refreshMenu();
         } catch(e) { dev.log(e); }
     }
@@ -301,7 +306,7 @@ var BowserIndicator = GObject.registerClass({
                 Me.config.uriPrefs[returnObject.searchText].defaultBrowser = menuItem.prefvalue.defaultBrowser;
                 this._prefMenuItemRemoveEntry(menuItem, false);
             }
-            Me.saveConfiguration();
+            saveConfiguration();
             uiUtils.showUserFeedbackMessage("Changes saved.");
         }, editable, editables, buttonStyles);
         } catch(e) { dev.log(e); }
@@ -324,22 +329,23 @@ var BowserIndicator = GObject.registerClass({
             }
             Me.config.uriPrefs[returnObject.searchText].uriOptions.pageTitle = returnObject.extras.pageTitle;
             Me.config.uriPrefs[returnObject.searchText].uriOptions.pageContents = returnObject.extras2.pageContents;
-            Me.saveConfiguration();
+            saveConfiguration();
             uiUtils.showUserFeedbackMessage("New rule created.");
         }, editable, editables, buttonStyles);
         } catch(e) { dev.log(e); }
     }
     _onBowserSwitch(menuItem) {
-        if (BOWSER_ENABLED) Me.disableBowser(); else Me.enableBowser();
+        if (BOWSER_ENABLED) disableBowser(); else enableBowser();
     }
     _onAskSwitch() {
         Me.config.askOnUnmatchedURI = Me.config.askOnUnmatchedURI ? false : true;
-        Me.saveConfiguration();
+        saveConfiguration();
     }
     _toggleMenu(){
         this.menu.toggle();
     }
     _openSettings() {
-        Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);
+        imports.misc.extensionUtils.openPrefs()
+        //Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);
     }
 });

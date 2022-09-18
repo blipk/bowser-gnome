@@ -37,26 +37,14 @@ const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
 function init() {
     extensionUtils.initTranslations();
-    dev.log(arguments.callee.name+'();');
 }
 
 function enable() {
     try {
+    fileUtils.enable()
     dev.log(arguments.callee.name+'()');
     if (Me.bowserIndicator) return; // Already initialized
-
-    // Setup global access
-    Me.makeConfiguration = makeConfiguration;
-    Me.loadConfiguration = loadConfiguration;
-    Me.saveConfiguration = saveConfiguration;
-    Me.importConfiguration = importConfiguration;
-    Me.exportConfiguration = exportConfiguration;
-    Me.getxdgDefaultBrowser = getxdgDefaultBrowser;
-    Me.setxdgDefaultBrowser = setxdgDefaultBrowser;
-    Me.detectWebBrowsers = detectWebBrowsers;
-    Me.enableBowser = enableBowser;
-    Me.disableBowser = disableBowser;
-    Me.openBowser = openBowser;
+    
     Me.URIs = Array();
     Me.PYBOWSER = false;
     Me.settings = extensionUtils.getSettings(Me.metadata['settings-schema']);
@@ -77,10 +65,11 @@ function enable() {
 function disable() {
     try {
     dev.log(arguments.callee.name+'()');
-    if (Me.bowserIndicator) Me.bowserIndicator.destroy(); delete Me.bowserIndicator;
-    if (Me.fileMonitor) Me.fileMonitor.disconnect(Me.fileChangedId); delete Me.fileMonitor;
-    if (Me.extensionChangedHandler) extensionSystem.disconnect(extensionChangedHandler);
     if (Me.settings) Me.settings.run_dispose(); delete Me.settings;
+    if (Me.extensionChangedHandler) extensionSystem.disconnect(extensionChangedHandler);
+    if (Me.bowserIndicator) Me.bowserIndicator.destroy(); delete Me.bowserIndicator;
+    if (Me.URIs) delete Me.URIs
+    if (Me.PYBOWSER) delete Me.PYBOWSER
     dev.log(arguments.callee.name+'()', ";");
     } catch(e) { dev.log(e); }
 }
@@ -147,7 +136,7 @@ function processURIs() {
                 Me.URIs = Me.URIs.slice(Me.URIs.indexOf(URI), Me.URIs.indexOf(URI)+1);
                 Me.bowserIndicator.menu.toggle();
                 cancel = true;
-                //Me.URIs.shift();
+                Me.URIs.shift();
             }
         }, this);
 
@@ -200,7 +189,7 @@ function openBrowser(overrideURI) {
                 let [success, argv] = GLib.shell_parse_argv(exec);
                 util.spawn(argv);
                 Me.URIs.shift();
-                //if (Me.URIs.length > 0) Me.openBrowser();
+                if (Me.URIs.length > 0) Me.openBrowser();
             }
         }, this);
     }, this);

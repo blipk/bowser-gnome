@@ -38,26 +38,32 @@ var USER_CONF_DIR = GLib.get_user_config_dir();
 var USER_CACHE_DIR = GLib.get_user_cache_dir();
 var USER_DATA_DIR = GLib.get_user_data_dir();
 var SYS_DATA_DIRS = GLib.get_system_data_dirs();
-let m = /@(.+):\d+/.exec((new Error()).stack.split('\n')[1]);
-let d = Gio.File.new_for_path(m[1]).get_parent().get_path();
-var INSTALL_DIR = d.startsWith(GLib.get_user_data_dir())
+
+var INSTALL_DIR, CONF_DIR, PYBOWSER_CONF_DIR, BOWSER_EXEC_FILE,
+RES_FILE, URI_FILE, PNG_ICON_FILE, SVG_ICON_FILE,
+DESKTOP_FILE, PYBOWSER_DESKTOP_FILE, PYBOWSER_CONF_FILE, PYBOWSER_EXEC_FILE
+function enable() {
+    let m = /@(.+):\d+/.exec((new Error()).stack.split('\n')[1]);
+    let d = Gio.File.new_for_path(m[1]).get_parent().get_path();
+    INSTALL_DIR = d.startsWith(GLib.get_user_data_dir())
                         ? GLib.build_pathv('/', [USER_DATA_DIR, 'gnome-shell', 'extensions', Me.uuid])
                         : GLib.build_pathv('/', ['usr', 'share', 'gnome-shell', 'extensions', Me.uuid]);
-var CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
-var PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
-var BOWSER_EXEC_FILE = GLib.build_filenamev([INSTALL_DIR, 'bowser.js']);
+    CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, Me.uuid]);
+    PYBOWSER_CONF_DIR = GLib.build_pathv('/', [USER_CONF_DIR, 'bowser']);
 
-var RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.kronosoul.Bowser.gresource']);
-var URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
-var PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
-var SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
+    BOWSER_EXEC_FILE = GLib.build_filenamev([INSTALL_DIR, 'bowser.js']);
 
-var DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/applications/bowser-gnome.desktop']);
-var PYBOWSER_DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser.desktop']);
-var PYBOWSER_CONF_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.conf']);
-var PYBOWSER_EXEC_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.py']);
+    RES_FILE = GLib.build_filenamev([INSTALL_DIR, 'org.kronosoul.Bowser.gresource']);
+    URI_FILE = GLib.build_filenamev([CONF_DIR, '.uris']);
+    PNG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/256x256/apps/bowser.png']);
+    SVG_ICON_FILE = GLib.build_filenamev([USER_DATA_DIR, '/icons/hicolor/scalable/apps/bowser.svg']);
 
+    DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/applications/bowser-gnome.desktop']);
+    PYBOWSER_DESKTOP_FILE = GLib.build_filenamev([USER_DATA_DIR, '/share/applications/bowser.desktop']);
+    PYBOWSER_CONF_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.conf']);
+    PYBOWSER_EXEC_FILE = GLib.build_filenamev([PYBOWSER_CONF_DIR, 'bowser.py']);
+}
 var BOWSER_CONF_FILE = function() {
     if (Me.PYBOWSER) return PYBOWSER_CONF_FILE;
     else return GLib.build_filenamev([CONF_DIR, 'bowser.conf']);
