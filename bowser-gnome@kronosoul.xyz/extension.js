@@ -136,7 +136,6 @@ function processURIs() {
                 Me.URIs = Me.URIs.slice(Me.URIs.indexOf(URI), Me.URIs.indexOf(URI)+1);
                 Me.bowserIndicator.menu.toggle();
                 cancel = true;
-                Me.URIs.shift();
             }
         }, this);
 
