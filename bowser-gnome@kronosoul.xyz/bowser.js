@@ -115,7 +115,8 @@ const BowserService = GObject.registerClass({
 
             if (options.contains('openuri')) {
                 let uri = options.lookup_value('openuri', null).unpack();
-                if (uri == '') uri = '--s';
+                // if (uri == '') uri = '--s';
+                if (uri == '') uri = '--default';
                 print(`Opening ${uri}`);
                 let currentURIList = JSON.parse(this.settings.get_string('uri-list'));
                 currentURIList.push(uri);

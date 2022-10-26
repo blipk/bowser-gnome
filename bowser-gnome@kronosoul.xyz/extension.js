@@ -44,7 +44,7 @@ function enable() {
     fileUtils.enable()
     dev.log(arguments.callee.name+'()');
     if (Me.bowserIndicator) return; // Already initialized
-    
+
     Me.URIs = Array();
     Me.PYBOWSER = false;
     Me.settings = extensionUtils.getSettings(Me.metadata['settings-schema']);
@@ -136,13 +136,17 @@ function processURIs() {
                 Me.URIs = Me.URIs.slice(Me.URIs.indexOf(URI), Me.URIs.indexOf(URI)+1);
                 Me.bowserIndicator.menu.toggle();
                 cancel = true;
+            } else if (URI == '--default') {
+                Me.URIs = Me.URIs.slice(Me.URIs.indexOf(URI), Me.URIs.indexOf(URI)+1);
+                openBrowser("", false)
+                cancel = true;
             }
         }, this);
 
         if (!cancel) openBrowser();
     } catch(e) { dev.log(e); }
 }
-function openBrowser(overrideURI) {
+function openBrowser(overrideURI, askOnUnmatchedURI = Me.config.askOnUnmatchedURI) {
     try {
     let URI = Me.URIs[0];
     if (overrideURI) URI = overrideURI;
@@ -193,8 +197,8 @@ function openBrowser(overrideURI) {
         }, this);
     }, this);
 
-    if (Me.config.askOnUnmatchedURI && matchFound == false) {
-            spawnUnmatchedURIDialog()
+    if (askOnUnmatchedURI && matchFound == false) {
+        spawnUnmatchedURIDialog()
     } else if (!matchFound) {
         let exec = Me.config.browserApps[Me.config.defaultBrowser][1].replace("%u", URI).replace("%U", URI);
         let [success, argv] = GLib.shell_parse_argv(exec);
