@@ -24,134 +24,136 @@
  */
 
 // External imports
-const { GLib, Gio } = imports.gi;
+import GLib from "gi://GLib"
+import Gio from "gi://Gio"
 
 // Internal imports
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const dev = Me.imports.dev;
-const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
+import { BowserGnomeInstance as Me } from "./extension.js"
+import * as dev from "./dev.js"
+import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
 //General
-function truncateString(instring, length) {
-    let shortened = instring.replace(/\s+/g, ' ');
-    if (shortened.length > length)
-        shortened = shortened.substring(0, length - 1) + '...';
-    return shortened;
+export function truncateString( instring, length ) {
+    let shortened = instring.replace( /\s+/g, " " )
+    if ( shortened.length > length )
+        shortened = shortened.substring( 0, length - 1 ) + "..."
+    return shortened
 }
 
-var isEmpty = function (v) {
-    return typeof v === 'undefined' ? true
+export var isEmpty = function ( v ) {
+    return typeof v === "undefined" ? true
         : v === null ? true
             : v === [] ? true
-                : typeof v === 'object' ? (Object.getOwnPropertyNames(v).length > 0 ? false : true)
-                    : typeof v === 'string' ? (v.length > 0 ? false : true)
-                        : Boolean(v);
+                : typeof v === "object" ? ( Object.getOwnPropertyNames( v ).length > 0 ? false : true )
+                    : typeof v === "string" ? ( v.length > 0 ? false : true )
+                        : Boolean( v )
 }
 
-if (!Object.prototype.hasOwnProperty('forEachEntry')) {
-Object.defineProperty(Object.prototype, 'forEachEntry', {
-    value: function (callback, thisArg, recursive = false, recursiveIndex = 0) {
-        if (this === null) throw new TypeError('Not an object');
-        thisArg = thisArg || this;
+if ( !Object.prototype.hasOwnProperty( "forEachEntry" ) ) {
+Object.defineProperty( Object.prototype, "forEachEntry", {
+    value: function ( callback, thisArg, recursive = false, recursiveIndex = 0 ) {
+        if ( this === null ) throw new TypeError( "Not an object" )
+        thisArg = thisArg || this
 
-        Object.entries(this).forEach(function (entryArray, entryIndex) {
-            let [key, value] = entryArray;
-            let entryObj = { [key]: this[key] };
-            let retIndex = entryIndex + recursiveIndex;
-            callback.call(thisArg, key, this[key], retIndex, entryObj, entryArray, this);
-            if (typeof this[key] === 'object' && this[key] !== null && recursive === true) {
-                if (Array.isArray(this[key]) === true) {
-                    this[key].forEach(function (prop, index) {
-                        if (Array.isArray(this[key][index]) === false && typeof this[key][index] === 'object' && this[key][index] !== null) {
-                            recursiveIndex += Object.keys(this).length - 1;
-                            this[key][index].forEachEntry(callback, thisArg, recursive, recursiveIndex);
+        Object.entries( this ).forEach( function ( entryArray, entryIndex ) {
+            let [key, value] = entryArray
+            let entryObj = { [key]: this[key] }
+            let retIndex = entryIndex + recursiveIndex
+            callback.call( thisArg, key, this[key], retIndex, entryObj, entryArray, this )
+            if ( typeof this[key] === "object" && this[key] !== null && recursive === true ) {
+                if ( Array.isArray( this[key] ) === true ) {
+                    this[key].forEach( function ( prop, index ) {
+                        if ( Array.isArray( this[key][index] ) === false && typeof this[key][index] === "object" && this[key][index] !== null ) {
+                            recursiveIndex += Object.keys( this ).length - 1
+                            this[key][index].forEachEntry( callback, thisArg, recursive, recursiveIndex )
                         }
-                    }, this);
+                    }, this )
                 } else {
-                    recursiveIndex += Object.keys(this).length - 1;
-                    this[key].forEachEntry(callback, thisArg, recursive, recursiveIndex);
+                    recursiveIndex += Object.keys( this ).length - 1
+                    this[key].forEachEntry( callback, thisArg, recursive, recursiveIndex )
                 }
             }
-        }, this);
+        }, this )
     }
-});
+} )
 }
 
-if (!Object.prototype.hasOwnProperty('filterObj')) {
-Object.defineProperty(Object.prototype, 'filterObj', {
-    value: function (predicate) {
-        return Object.fromEntries(Object.entries(this).filter(predicate));
+if ( !Object.prototype.hasOwnProperty( "filterObj" ) ) {
+Object.defineProperty( Object.prototype, "filterObj", {
+    value: function ( predicate ) {
+        return Object.fromEntries( Object.entries( this ).filter( predicate ) )
     }
-});
+} )
 }
 
-function splitURI(inURI) {
+export function splitURI( inURI ) {
     try {
-    let regexPattern = /^(([^:/\?#]+):)?(\/\/([^/\?#]*))?([^\?#]*)(\?([^#]*))?(#(.*))?/;
+    let regexPattern = /^(([^:/\?#]+):)?(\/\/([^/\?#]*))?([^\?#]*)(\?([^#]*))?(#(.*))?/
 
-    let re = RegExp(regexPattern)
-    let output = re.exec(inURI);
+    let re = RegExp( regexPattern )
+    let output = re.exec( inURI )
 
-    if (output[3] == undefined)
-        inURI = 'foo://' + inURI;
-        output = re.exec(inURI);
+    if ( output[3] == undefined )
+        inURI = "foo://" + inURI
+        output = re.exec( inURI )
 
     // Named capture groups not working on gjs :(
-    let splitURI = {'scheme': output[1], 'schemeTrim': output[2],
-                'authority': output[3], 'authorityTrim': output[4],
-                'path': output[5],
-                'query': output[6], 'queryTrim': output[7],
-                'fragment': output[8], 'fragmentTrim': output[9]}
+    let splitURI = {"scheme"        : output[1], "schemeTrim"    : output[2],
+                "authority"     : output[3], "authorityTrim" : output[4],
+                "path"          : output[5],
+                "query"         : output[6], "queryTrim"     : output[7],
+                "fragment"      : output[8], "fragmentTrim"  : output[9]}
 
-    if (splitURI['scheme'] == 'foo:')
-        splitURI['scheme'] = '';
-        inURI = inURI.substring(6);
+    if ( splitURI["scheme"] == "foo:" )
+        splitURI["scheme"] = ""
+        inURI = inURI.substring( 6 )
 
-    return splitURI;
-    } catch(e) { dev.log(e); }
+    return splitURI
+    } catch( e ) { dev.log( e ) }
 }
 
 // Combines the benefits of spawn_sync (easy retrieval of output)
 // with those of spawn_async (non-blocking execution).
 // Based on https://github.com/optimisme/gjs-examples/blob/master/assets/spawn.js.
 // https://github.com/p-e-w/argos/blob/master/argos%40pew.worldwidemann.com/utilities.js
-function spawnWithCallback(workingDirectory, argv, envp, flags, childSetup, callback) {
+export function spawnWithCallback( workingDirectory, argv, envp, flags, childSetup, callback ) {
     let [success, pid, stdinFile, stdoutFile, stderrFile] = GLib.spawn_async_with_pipes(
-        workingDirectory, argv, envp, flags, childSetup);
+        workingDirectory, argv, envp, flags, childSetup 
+)
 
-    if (!success)
-        return;
+    if ( !success )
+        return
 
-    GLib.close(stdinFile);
-    GLib.close(stderrFile);
+    GLib.close( stdinFile )
+    GLib.close( stderrFile )
 
-    let standardOutput = "";
+    let standardOutput = ""
 
-    let stdoutStream = new Gio.DataInputStream({
-        base_stream: new Gio.UnixInputStream({
+    let stdoutStream = new Gio.DataInputStream( {
+        base_stream: new Gio.UnixInputStream( {
             fd: stdoutFile
-        })
-    });
+        } )
+    } )
 
-    readStream(stdoutStream, function (output) {
-        if (output === null) {
-            stdoutStream.close(null);
-            callback(standardOutput);
+    readStream( stdoutStream, function ( output ) {
+        if ( output === null ) {
+            stdoutStream.close( null )
+            callback( standardOutput )
         } else {
-            standardOutput += output;
+            standardOutput += output
         }
-    });
+    } )
 }
 
-function readStream(stream, callback) {
-    stream.read_line_async(GLib.PRIORITY_LOW, null, function (source, result) {
-        let [line] = source.read_line_finish(result);
+export function readStream( stream, callback ) {
+    stream.read_line_async( GLib.PRIORITY_LOW, null, function ( source, result ) {
+        let [line] = source.read_line_finish( result )
 
-        if (line === null) {
-            callback(null);
+        if ( line === null ) {
+            callback( null )
         } else {
-            callback(imports.byteArray.toString(line) + "\n");
-            readStream(source, callback);
+            callback( new TextDecoder().decode( line ) + "\n" )
+            readStream( source, callback )
         }
-    });
+    } )
 }

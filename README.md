@@ -41,7 +41,7 @@ This has only been thoroughly tested on Gnome Shell version 3.36, although it sh
 
 ```
 This file is part of the Bowser Gnome Extension for Gnome 3
-Copyright (C) 2020 A.D. - http://kronosoul.xyz
+Copyright (C) 2024 A.D. - http://kronosoul.xyz
 ```
 
 ```
