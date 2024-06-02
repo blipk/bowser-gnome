@@ -291,7 +291,6 @@ export default class BowserGnome extends Extension {
         let dialogStyle = { styleClass: "browser-dialog", destroyOnClose: true }
         let buttonStyles = [{ label: "Cancel", key: Clutter.KEY_Escape, style_class: "browser-dialog-buttons" }]
         let createRuleDialog = new dialogs.ObjectEditorDialog( "", ( returnObject ) => {
-            dev.log( "CALLBACK", this.URIs )
             if ( !returnObject.ruleCreated ) this.URIs.shift()
             if ( this.URIs.length > 0 ) this.spawnUnmatchedURIDialog( this.URIs )
             return
@@ -383,13 +382,15 @@ export default class BowserGnome extends Extension {
         try {
             utils.spawnWithCallback( null, ["/usr/bin/zenity", "--file-selection", "--save", "--title=Export Configuration", "--filename=settings-backup.conf"], GLib.get_environ(), 0, null,
                 ( resource ) => {
+                    try {
                     if ( !resource ) return
                     resource = resource.trim()
-                    fileName = GLib.path_get_basename( resource )
-                    filePath = GLib.path_get_dirname( resource )
+                    const fileName = GLib.path_get_basename( resource )
+                    const filePath = GLib.path_get_dirname( resource )
                     this.saveConfiguration( fileName, filePath )
 
                     uiUtils.showUserNotification( "Configuration exported to " + resource, true )
+                    } catch ( e ) { dev.log( e ) }
                 } )
         } catch ( e ) { dev.log( e ) }
     }
@@ -399,8 +400,8 @@ export default class BowserGnome extends Extension {
                 ( resource ) => {
                     if ( !resource ) return
                     resource = resource.trim()
-                    fileName = GLib.path_get_basename( resource )
-                    filePath = GLib.path_get_dirname( resource )
+                    const fileName = GLib.path_get_basename( resource )
+                    const filePath = GLib.path_get_dirname( resource )
                     this.loadConfiguration( null, fileName, filePath )
                     this.saveConfiguration()
                     uiUtils.showUserNotification( "Configuration loaded from " + resource, true )

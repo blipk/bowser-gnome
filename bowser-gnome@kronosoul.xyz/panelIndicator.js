@@ -121,7 +121,7 @@ export var BowserIndicator = GObject.registerClass( {
             settingsMenuItem.label.set_x_expand( true )
             this.menu.settingsMenuItem = settingsMenuItem
             this.menu.addMenuItem( settingsMenuItem )
-            settingsMenuItem.connect( "button_press_event", () => { this._newRule() } )
+            settingsMenuItem.connect( "activate", () => { this._newRule() } )
 
             if ( Me.PYBOWSER ) uiUtils.createIconButton( settingsMenuItem, "document-properties-symbolic", () => { Me.openBowser() } )
             uiUtils.createIconButton( settingsMenuItem, "document-open-symbolic", () => { Me.importConfiguration() } )
