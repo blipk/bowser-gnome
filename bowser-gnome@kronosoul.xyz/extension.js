@@ -59,9 +59,6 @@ export default class BowserGnome extends Extension {
             this.PYBOWSER = false
             this.settings = this.getSettings( this.metadata["settings-schema"] )
 
-            // For older versions of Gnome-Shell
-            if ( extensionSystem.connect ) this.extensionChangedHandler = extensionSystem.connect( "extension-state-changed", enable )
-
             // Check/install status then start watching
             this._checkBowser()
             this._enableURIWatcher()
@@ -74,8 +71,7 @@ export default class BowserGnome extends Extension {
 
     disable() {
         try {
-            if ( this.settings ) this.settings.run_dispose(); delete this.settings
-            if ( this.extensionChangedHandler ) extensionSystem.disconnect( extensionChangedHandler )
+            if ( uiUtils.messages ) uiUtils.messages = null
             if ( this.bowserIndicator ) this.bowserIndicator.destroy(); delete this.bowserIndicator
             if ( this.URIs ) delete this.URIs
             if ( this.PYBOWSER ) delete this.PYBOWSER
@@ -93,26 +89,39 @@ export default class BowserGnome extends Extension {
     _installbowser() {
         try {
             // Load compiled resources
-            Gio.Resource.load( fileUtils.RES_FILE )._register()
+            let resources_loaded = false
+
+            const checkLoadResources = () => {
+                if ( !resources_loaded ) Gio.Resource.load( fileUtils.RES_FILE )._register()
+                resources_loaded = true
+            }
 
             // Create and install XDG Dekstop file
-            //if (!fileUtils.checkExists([fileUtils.DESKTOP_FILE]))
-            fileUtils.installResource( "res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE )
-            GLib.spawn_command_line_sync( "xdg-desktop-menu install " + fileUtils.CONF_DIR + "/bowser-gnome.desktop --novendor" )
+            if ( !fileUtils.checkExists( [fileUtils.DESKTOP_FILE] ) ) {
+                checkLoadResources()
+                fileUtils.installResource( "res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE )
+                GLib.spawn_command_line_sync( "xdg-desktop-menu install " + fileUtils.CONF_DIR + "/bowser-gnome.desktop --novendor" )
+            }
 
             // Set as default and set our URI passing script to executable
-            if ( this.getxdgDefaultBrowser() != "bowser-gnome.desktop" ) this.setxdgDefaultBrowser( "bowser-gnome.desktop" )
-            util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
+            // if ( this.getxdgDefaultBrowser() != "bowser-gnome.desktop" ) {
+            //     this.setxdgDefaultBrowser( "bowser-gnome.desktop" )
+            // }
+            // util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
 
             // Install icon resources
-            if ( !fileUtils.checkExists( [fileUtils.PNG_ICON_FILE] ) )
+            if ( !fileUtils.checkExists( [fileUtils.PNG_ICON_FILE] ) ) {
+                checkLoadResources()
                 fileUtils.installResource( "res/bowser.png", fileUtils.PNG_ICON_FILE )
-            util.spawnCommandLine( "xdg-icon-resource install --novendor --context apps --size 256 " + fileUtils.PNG_ICON_FILE + " bowser" )
+                util.spawnCommandLine( "xdg-icon-resource install --novendor --context apps --size 256 " + fileUtils.PNG_ICON_FILE + " bowser" )
 
-            if ( !fileUtils.checkExists( [fileUtils.SVG_ICON_FILE] ) ) // xdg-icon-resource does not accept svg
-                fileUtils.installResource( "res/bowser.svg", fileUtils.SVG_ICON_FILE )
+                if ( !fileUtils.checkExists( [fileUtils.SVG_ICON_FILE] ) ) {
+                    // xdg-icon-resource does not accept svg
+                    fileUtils.installResource( "res/bowser.svg", fileUtils.SVG_ICON_FILE )
+                }
 
-            util.spawnCommandLine( "gtk-update-icon-cache -f ~/.local/share/icons/hicolor --ignore-theme-index" )
+                util.spawnCommandLine( "gtk-update-icon-cache -f ~/.local/share/icons/hicolor --ignore-theme-index" )
+            }
         } catch ( e ) { dev.log( e ) }
     }
     _enableURIWatcher() {
@@ -161,10 +170,10 @@ export default class BowserGnome extends Extension {
             splitURI.pageTitle = ""
             splitURI.pageContents = ""
 
-            this.config.uriPrefs.forEachEntry( function ( prefKey, prefValues, i ) {
+            utils.forEachEntry( this.config.uriPrefs, function ( prefKey, prefValues, i ) {
                 let compareURI = ""
 
-                this.config.uriPrefs[prefKey].uriOptions.forEachEntry( function ( optionKey, optionValue, n ) {
+                utils.forEachEntry( this.config.uriPrefs[prefKey].uriOptions, function ( optionKey, optionValue, n ) {
                     if ( !optionValue || !splitURI[optionKey] ) return
                     if ( optionValue && optionKey != "scheme" ) compareURI += splitURI[optionKey].toLowerCase()
 
@@ -248,7 +257,7 @@ export default class BowserGnome extends Extension {
         uriOptionsEditables.push( Object.assign( { fragment: splitURI["fragment"] || " ", hidden: ( splitURI["fragment"] == "" ) }, uriOptionsEditables[0] ) )
         editables.push( { uriOptions: " ", subObjectEditableProperties: uriOptionsEditables, boxStyle: { style_class: "browser-uri-box", reactive: true, can_focus: true, x_expand: true, y_expand: true, x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.FILL } } )
 
-        this.config.browserApps.forEachEntry( function ( browserAppKey, browserAppValue, i ) {
+        utils.forEachEntry( this.config.browserApps, function ( browserAppKey, browserAppValue, i ) {
             editable[browserAppKey] = browserAppValue[0]
 
             editables[i + 1] = {
@@ -264,7 +273,7 @@ export default class BowserGnome extends Extension {
                 // Create rule
                 let outURI = ""
 
-                this.editableObject.uriOptions.forEachEntry( function ( key, value, z ) {
+                utils.forEachEntry( this.editableObject.uriOptions, function ( key, value, z ) {
                     if ( key == "authority" ) key = "authorityTrim"
                     if ( value == true ) outURI += splitURI[key]
                     //Drop the www. in the domain for the pref
@@ -367,7 +376,7 @@ export default class BowserGnome extends Extension {
             if ( this.config.defaultBrowser == "" && ( currentBrowser == "bowser.desktop" || currentBrowser == "bowser-gnome.desktop" ) )
                 this.config.defaultBrowser = Object.keys( this.config.browserApps )[0]
             else if ( this.config.defaultBrowser == "" ) {
-                this.config.browserApps.forEachEntry( function ( browserApp ) {
+                utils.forEachEntry( this.config.browserApps, function ( browserApp ) {
                     if ( browserApp.includes( currentBrowser ) )
                         this.config.defaultBrowser = browserApp
                 }, this )
@@ -410,6 +419,8 @@ export default class BowserGnome extends Extension {
     }
     enableBowser() {
         try {
+            util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
+
             let result = this.setxdgDefaultBrowser()
             let msg = "Bowser has been Enabled"
             if ( result != "" ) msg = "Error Enabling Bowser: " + result

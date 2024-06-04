@@ -47,7 +47,7 @@ export let BOWSER_ENABLED = false
 export let ASK_ENABLED = false
 export let MAX_ENTRY_LENGTH = 50
 
-export var BowserIndicator = GObject.registerClass( {
+export const BowserIndicator = GObject.registerClass( {
     GTypeName: "BowserIndicator"
 }, class BowserIndicator extends panelMenu.Button {
     destroy() {
@@ -137,7 +137,7 @@ export var BowserIndicator = GObject.registerClass( {
             if ( utils.isEmpty( Me.config ) ) return
             Me.loadConfiguration()
             this._prefMenuItemsRemoveAll()
-            Me.config.uriPrefs.forEachEntry( function ( prefBufferKey, prefBufferValue, i, prefBufferEntryObj ) {
+            utils.forEachEntry( Me.config.uriPrefs, function ( prefBufferKey, prefBufferValue, i, prefBufferEntryObj ) {
                 this._addprefMenuItemEntry( prefBufferEntryObj )
             }, this )
             Me.saveConfiguration()
@@ -202,7 +202,7 @@ export var BowserIndicator = GObject.registerClass( {
         menuItem.prefBrowsersMenuItems.forEach( function ( mItem ) { mItem.destroy() } )
         menuItem.prefBrowsersMenuItems = []
 
-        Me.config.browserApps.forEachEntry( function ( browserAppKey, browserAppValue, i ) {
+        utils.forEachEntry( Me.config.browserApps, function ( browserAppKey, browserAppValue, i ) {
             let [name, exec, mimetypes, icon] = browserAppValue
             icon = icon || "web-browser-sybmolic"
             menuItem.prefBrowsersMenuItems[i] = new popupMenu.PopupImageMenuItem( _( name ), icon )
@@ -232,7 +232,7 @@ export var BowserIndicator = GObject.registerClass( {
         if ( this.detectWebBrowserMenuButton ) this.detectWebBrowserMenuButton.destroy()
         this.webbrowsersMenuItems = []
 
-        Me.config.browserApps.forEachEntry( function ( browserAppKey, browserApp, i ) {
+        utils.forEachEntry( Me.config.browserApps, function ( browserAppKey, browserApp, i ) {
             let name = browserApp[0]
             let exec = browserApp[1]
             let icon = browserApp[3] ? browserApp[3] : "web-browser-sybmolic"

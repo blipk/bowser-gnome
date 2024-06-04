@@ -18,7 +18,7 @@ import * as fileUtils from "./fileUtils.js"
 
 
 // Object Editor Dialog
-export var ObjectEditorDialog = GObject.registerClass( {
+export const ObjectEditorDialog = GObject.registerClass( {
     GTypeName: "ObjectEditorDialog"
 }, class ObjectEditorDialog extends modalDialog.ModalDialog {
     _init( dialogInfoTextStyle = "",
@@ -43,7 +43,7 @@ export var ObjectEditorDialog = GObject.registerClass( {
         this.contentLayout.style_class = contentLayoutBoxStyleClass ? contentLayoutBoxStyleClass : this.contentLayout.style_class
 
         //Label for our dialog/text field with text about the dialog or a prompt for user text input
-        defaults = { style_class: "object-dialog-label", text: _( ( dialogInfoTextStyle.text || dialogInfoTextStyle ).toString() ), x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.START, x_expand: true } 
+        defaults = { style_class: "object-dialog-label", text: _( ( dialogInfoTextStyle.text || dialogInfoTextStyle ).toString() ), x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.START, x_expand: true }
         dialogInfoTextStyle = ( typeof dialogInfoTextStyle == "string" ) ? defaults : {...defaults, ...dialogInfoTextStyle }
         let stLabelUText = new St.Label( dialogInfoTextStyle )
         stLabelUText.get_clutter_text().line_wrap = false
@@ -82,7 +82,7 @@ export var ObjectEditorDialog = GObject.registerClass( {
         this.subObjectMasks = Array()
         this.propertyBoxClickCallbacks = Array()
         if ( editableObject ) {
-            editableObject.forEachEntry( function( key, value, i ) {
+            utils.forEachEntry( editableObject, function( key, value, i ) {
                 //Options for how to display each property section
                 this.propertyKeys[i] = key
                 this.propertyValues[i] = value
@@ -171,14 +171,14 @@ export var ObjectEditorDialog = GObject.registerClass( {
 
                     // Check for valid types in the sub object
                     let containsBooleans = true
-                    value.forEachEntry( function( subobjectKey, subobjectValue, i ){
+                    utils.forEachEntry( value, function( subobjectKey, subobjectValue, i ){
                         if ( typeof subobjectValue != "boolean" ) containsBooleans = false
                     }, this )
                     if ( !containsBooleans ) return
 
                     // Build UI
                     this._propertyBoxes[i]._boolBox = Array()
-                    value.forEachEntry( function( subobjectKey, subobjectValue, n ){
+                    utils.forEachEntry( value, function( subobjectKey, subobjectValue, n ){
                         // Set up display masks for the subobject properties
                         let subObjectPropertyDisplayName = key
                         let subObjectPropertyDisabled = false

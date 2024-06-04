@@ -34,12 +34,12 @@ import * as dev from "./dev.js"
 import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
 // Directory and file paths for resources
-export var USER_CONF_DIR = GLib.get_user_config_dir()
-export var USER_CACHE_DIR = GLib.get_user_cache_dir()
-export var USER_DATA_DIR = GLib.get_user_data_dir()
-export var SYS_DATA_DIRS = GLib.get_system_data_dirs()
+export let USER_CONF_DIR = GLib.get_user_config_dir()
+export let USER_CACHE_DIR = GLib.get_user_cache_dir()
+export let USER_DATA_DIR = GLib.get_user_data_dir()
+export let SYS_DATA_DIRS = GLib.get_system_data_dirs()
 
-export var RES_PATH, INSTALL_DIR, CONF_DIR, PYBOWSER_CONF_DIR, BOWSER_EXEC_FILE,
+export let RES_PATH, INSTALL_DIR, CONF_DIR, PYBOWSER_CONF_DIR, BOWSER_EXEC_FILE,
 RES_FILE, URI_FILE, PNG_ICON_FILE, SVG_ICON_FILE,
 DESKTOP_FILE, PYBOWSER_DESKTOP_FILE, PYBOWSER_CONF_FILE, PYBOWSER_EXEC_FILE
 
@@ -68,11 +68,11 @@ export function enable() {
     PYBOWSER_CONF_FILE = GLib.build_filenamev( [PYBOWSER_CONF_DIR, "bowser.conf"] )
     PYBOWSER_EXEC_FILE = GLib.build_filenamev( [PYBOWSER_CONF_DIR, "bowser.py"] )
 }
-export var BOWSER_CONF_FILE = function() {
+export const BOWSER_CONF_FILE = function() {
     if ( Me.PYBOWSER ) return PYBOWSER_CONF_FILE
     else return GLib.build_filenamev( [CONF_DIR, "bowser.conf"] )
 }
-export var BOWSER_CONF_DIR = function() {
+export const BOWSER_CONF_DIR = function() {
     if ( Me.PYBOWSER ) return PYBOWSER_CONF_DIR
     else return CONF_DIR
 }

@@ -40,42 +40,39 @@ export function truncateString( instring, length ) {
     return shortened
 }
 
-export var isEmpty = function ( v ) {
+export function isEmpty ( v ) {
     return typeof v === "undefined" ? true
         : v === null ? true
-            : v === [] ? true
+            : Array.isArray( v ) && v.length === 0 ? true
                 : typeof v === "object" ? ( Object.getOwnPropertyNames( v ).length > 0 ? false : true )
                     : typeof v === "string" ? ( v.length > 0 ? false : true )
                         : Boolean( v )
 }
 
-if ( !Object.prototype.hasOwnProperty( "forEachEntry" ) ) {
-Object.defineProperty( Object.prototype, "forEachEntry", {
-    value: function ( callback, thisArg, recursive = false, recursiveIndex = 0 ) {
-        if ( this === null ) throw new TypeError( "Not an object" )
-        thisArg = thisArg || this
 
-        Object.entries( this ).forEach( function ( entryArray, entryIndex ) {
-            let [key, value] = entryArray
-            let entryObj = { [key]: this[key] }
-            let retIndex = entryIndex + recursiveIndex
-            callback.call( thisArg, key, this[key], retIndex, entryObj, entryArray, this )
-            if ( typeof this[key] === "object" && this[key] !== null && recursive === true ) {
-                if ( Array.isArray( this[key] ) === true ) {
-                    this[key].forEach( function ( prop, index ) {
-                        if ( Array.isArray( this[key][index] ) === false && typeof this[key][index] === "object" && this[key][index] !== null ) {
-                            recursiveIndex += Object.keys( this ).length - 1
-                            this[key][index].forEachEntry( callback, thisArg, recursive, recursiveIndex )
-                        }
-                    }, this )
-                } else {
-                    recursiveIndex += Object.keys( this ).length - 1
-                    this[key].forEachEntry( callback, thisArg, recursive, recursiveIndex )
-                }
+export function forEachEntry ( object, callback, thisArg, recursive = false, recursiveIndex = 0 ) {
+    if ( object === null ) throw new TypeError( "Not an object" )
+    thisArg = thisArg || object
+
+    Object.entries( object ).forEach( function ( entryArray, entryIndex ) {
+        let [key, value] = entryArray
+        let entryObj = { [key]: object[key] }
+        let retIndex = entryIndex + recursiveIndex
+        callback.call( thisArg, key, object[key], retIndex, entryObj, entryArray, object )
+        if ( typeof object[key] === "object" && object[key] !== null && recursive === true ) {
+            if ( Array.isArray( object[key] ) === true ) {
+                object[key].forEach( function ( prop, index ) {
+                    if ( Array.isArray( object[key][index] ) === false && typeof object[key][index] === "object" && object[key][index] !== null ) {
+                        recursiveIndex += Object.keys( object ).length - 1
+                        forEachEntry( object[key][index], callback, thisArg, recursive, recursiveIndex )
+                    }
+                }, thisArg )
+            } else {
+                recursiveIndex += Object.keys( object ).length - 1
+                forEachEntry( object[key], callback, thisArg, recursive, recursiveIndex )
             }
-        }, this )
-    }
-} )
+        }
+    }, thisArg )
 }
 
 if ( !Object.prototype.hasOwnProperty( "filterObj" ) ) {
@@ -118,7 +115,7 @@ export function splitURI( inURI ) {
 // https://github.com/p-e-w/argos/blob/master/argos%40pew.worldwidemann.com/utilities.js
 export function spawnWithCallback( workingDirectory, argv, envp, flags, childSetup, callback ) {
     let [success, pid, stdinFile, stdoutFile, stderrFile] = GLib.spawn_async_with_pipes(
-        workingDirectory, argv, envp, flags, childSetup 
+        workingDirectory, argv, envp, flags, childSetup
 )
 
     if ( !success )
