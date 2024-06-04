@@ -270,7 +270,7 @@ export const BowserIndicator = GObject.registerClass( {
     }
     _prefMenuItemRemoveEntry( menuItem, showMsg = true ) {
         try {
-            Me.config.uriPrefs = Me.config.uriPrefs.filterObj( ( [name, value] ) => ( name !== menuItem.prefkey && value !== menuItem.prefvalue ) )
+            Me.config.uriPrefs = utils.filterObj( Me.config.uriPrefs, ( [name, value] ) => ( name !== menuItem.prefkey && value !== menuItem.prefvalue ) )
             if ( showMsg ) uiUtils.showUserNotification( "Deleted rule: " + menuItem.nameText, true )
             menuItem.destroy()
             Me.saveConfiguration()

@@ -75,12 +75,8 @@ export function forEachEntry ( object, callback, thisArg, recursive = false, rec
     }, thisArg )
 }
 
-if ( !Object.prototype.hasOwnProperty( "filterObj" ) ) {
-Object.defineProperty( Object.prototype, "filterObj", {
-    value: function ( predicate ) {
-        return Object.fromEntries( Object.entries( this ).filter( predicate ) )
-    }
-} )
+export function filterObj ( object, predicate ) {
+    return Object.fromEntries( Object.entries( object ).filter( predicate ) )
 }
 
 export function splitURI( inURI ) {
