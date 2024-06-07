@@ -35,6 +35,10 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js"
 // Internal imports
 import * as dev from "./dev.js"
 
+export function destroy() {
+    messages = null
+}
+
 //For adding IconButtons on to PanelMenu.MenuItem buttons or elsewhere
 export function createIconButton( parentItem, iconNames, callback, options, tooltip = null ) { //St.Side.RIGHT
     try {

@@ -71,7 +71,7 @@ export default class BowserGnome extends Extension {
 
     disable() {
         try {
-            if ( uiUtils.messages ) uiUtils.messages = null
+            uiUtils.destroy()
             if ( this.bowserIndicator ) this.bowserIndicator.destroy(); delete this.bowserIndicator
             if ( this.URIs ) delete this.URIs
             if ( this.PYBOWSER ) delete this.PYBOWSER
