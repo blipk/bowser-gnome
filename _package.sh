@@ -4,5 +4,5 @@ glib-compile-resources ./res/org.kronosoul.Bowser.xml
 mv ./res/org.kronosoul.Bowser.gresource ./bowser-gnome@kronosoul.xyz
 rm -rf bowser-gnome@kronosoul.xyz.zip
 cd bowser-gnome@kronosoul.xyz
-zip -r ../bowser-gnome@kronosoul.xyz.zip * &&
+bsdtar -a -cf ../bowser-gnome@kronosoul.xyz.zip --exclude 'schemas/gschemas.compiled' *
 cd ..

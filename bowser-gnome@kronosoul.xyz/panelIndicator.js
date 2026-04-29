@@ -31,16 +31,14 @@ import * as boxpointer from "resource:///org/gnome/shell/ui/boxpointer.js"
 import GObject from "gi://GObject"
 import St from "gi://St"
 import Clutter from "gi://Clutter"
-import * as Util from "resource:///org/gnome/shell/misc/util.js"
 
 // Internal imports
 import { BowserGnomeInstance as Me } from "./extension.js"
 import * as dev from "./dev.js"
 import * as utils from "./utils.js"
-import * as fileUtils from "./fileUtils.js"
 import * as dialogs from "./dialogs.js"
 import * as uiUtils from "./uiUtils.js"
-import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
+import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
 // Constants
 export let BOWSER_ENABLED = false
@@ -63,7 +61,13 @@ export const BowserIndicator = GObject.registerClass( {
 
             // Set up menu box to build into
             let hbox = new St.BoxLayout( { style_class: "panel-status-menu-box bowser-gnome-indicator-hbox" } )
-            this.icon = new St.Icon( { icon_name: "web-browser-symbolic", style_class: "system-status-icon bowser-gnome-indicator-icon", opacity: 140 } )
+            this.icon = new St.Icon(
+                {
+                    icon_name   : "web-browser-symbolic",
+                    style_class : "system-status-icon bowser-gnome-indicator-icon",
+                    opacity     : 140
+                }
+            )
             hbox.add_child( this.icon );
             //let buttonText = new St.Label(    {text: (''), y_align: Clutter.ActorAlign.CENTER }   );
             //hbox.add_child(buttonText);
@@ -83,17 +87,17 @@ export const BowserIndicator = GObject.registerClass( {
         try {
             // Enable/Disable Bowser switch
             this.bowserMenuItem = new popupMenu.PopupSwitchMenuItem( _( "Bowser" ), BOWSER_ENABLED, { reactive: true } )
-            this.bowserMenuItem.connect( "toggled", () => { this._onBowserSwitch( this.bowserMenuItem ) } )
+            this.bowserMenuItem.connect( "button-press-event", () => { this._onBowserSwitch( this.bowserMenuItem ) } )
             this.menu.addMenuItem( this.bowserMenuItem )
 
             // Always ask switch
             this.toggleAskMenuItem = new popupMenu.PopupSwitchMenuItem( _( "Create rules on new links" ), ASK_ENABLED, { reactive: true } )
-            this.toggleAskMenuItem.connect( "toggled", this._onAskSwitch )
+            this.toggleAskMenuItem.connect( "button-press-event", this._onAskSwitch )
             this.menu.addMenuItem( this.toggleAskMenuItem )
 
             // Add Default Browser switcher
             this.defaultBrowsersSubMenu = new popupMenu.PopupSubMenuMenuItem( "Browsers", true )
-            this.defaultBrowsersSubMenu.actor.connect( "button_press_event", () => { this._defaultBrowsersSubMenuRefresh() } )
+            this.defaultBrowsersSubMenu.actor.connect( "button-press-event", () => { this._defaultBrowsersSubMenuRefresh() } )
             this.defaultBrowsersSubMenu.icon.icon_name = Me.config.browserApps[Me.config.defaultBrowser][3] ?
                 Me.config.browserApps[Me.config.defaultBrowser][3] : "web-browser-symbolic"
             this.menu.addMenuItem( this.defaultBrowsersSubMenu )
@@ -166,7 +170,7 @@ export const BowserIndicator = GObject.registerClass( {
             this._prefMenuItemSetEntryLabel( menuItem )
 
             // Connect menuitem and its iconbuttons
-            menuItem.buttonPressId = menuItem.connect( "button_press_event", () => { this._preferenceBrowserMenuRefresh( menuItem ) } )
+            menuItem.buttonPressId = menuItem.connect( "button-press-event", () => { this._preferenceBrowserMenuRefresh( menuItem ) } )
 
             // Create iconbuttons on MenuItem
             uiUtils.createIconButton( menuItem, "document-edit-symbolic", () => { this._editRule( menuItem ) } )

@@ -2,3 +2,4 @@ debug.log
 bowser.conf
 .mailmap
 node_modules
+venv

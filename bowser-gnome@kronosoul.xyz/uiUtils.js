@@ -24,23 +24,32 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 // External imports
 import St from "gi://St"
+import GLib from "gi://GLib"
+import Cogl from "gi://Cogl"
 import Clutter from "gi://Clutter"
+import GdkPixbuf from "gi://GdkPixbuf"
 
-import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js"
+import * as popupMenu from "resource:///org/gnome/shell/ui/popupMenu.js"
 
 // Internal imports
 import * as dev from "./dev.js"
+
+import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
+
+import { BowserGnomeInstance as Me } from "../../extension.js"
+
 
 export function destroy() {
     messages = null
 }
 
 //For adding IconButtons on to PanelMenu.MenuItem buttons or elsewhere
-export function createIconButton( parentItem, iconNames, callback, options, tooltip = null ) { //St.Side.RIGHT
+export function createIconButton( parentItem, iconNames, callback, options, tooltip ) { //St.Side.RIGHT
     try {
         if ( Array.isArray( iconNames ) )
             var [iconNameURI,
@@ -48,7 +57,7 @@ export function createIconButton( parentItem, iconNames, callback, options, tool
         else iconNameURI = iconNames
         let defaults = {
             icon_name   : iconNameURI,
-            style_class : "icon-button",
+            style_class : "bowser-icon-button",
             x_expand    : false,
             x_align     : Clutter.ActorAlign.CENTER,
             y_expand    : true,
@@ -59,12 +68,12 @@ export function createIconButton( parentItem, iconNames, callback, options, tool
 
         let icon = new St.Icon( options )
         let iconButton = new St.Button( {
-            child: icon, style_class: options.style_class || "icon-button", can_focus: true, x_expand: false, y_expand: false,
+            child: icon, style_class: options.style_class || "bowser-icon-button", can_focus: true, x_expand: false, y_expand: false,
         } )
         iconButton.icon = icon
         parentItem.add_child ? parentItem.add_child( iconButton ) : parentItem.actor.add_child( iconButton )
         parentItem.iconButtons = parentItem.iconButtons || new Array()
-        parentItem.iconsButtonsPressIds = parentItem.iconButtons || new Array()
+        parentItem.iconsButtonsPressIds = parentItem.iconsButtonsPressIds || new Array()
         if ( tooltip ) {
             iconButton.tooltip = tooltip
             createTooltip( iconButton, tooltip )
@@ -83,11 +92,11 @@ export function createIconButton( parentItem, iconNames, callback, options, tool
             if ( iconButton.focus == true ) callback(); return Clutter.EVENT_STOP
         } )
         parentItem.iconsButtonsPressIds.push( [iconButton.pressEvent,
-        iconButton.releaseEvent,
-        iconButton.leaveEvent] )
+            iconButton.releaseEvent,
+            iconButton.leaveEvent] )
         parentItem.destroyIconButtons = function () {
             parentItem.iconButtons.forEach( function ( iconButton ) {
-                //iconButton.destroy();
+                iconButton.destroy?.()
             }, this )
             parentItem.iconButtons = []
             parentItem.iconsButtonsPressIds = []
@@ -103,7 +112,7 @@ export function showUserNotification( input, overviewMessage = false, fadeTime =
     removeAllUserNotifications()
 
     if ( overviewMessage ) {
-        Main.overview.setMessage( _( input ), { forFeedback: true } )
+        Main.notify( "Customised Workspaces", _( input ) )
         return null
     }
     const label = new St.Label( { style_class: "feedback-label", text: _( input ) } )
@@ -117,7 +126,7 @@ export function showUserNotification( input, overviewMessage = false, fadeTime =
             Math.floor( monitor.width / 2 - messages[lastItem].width / 2 ),
         monitor.y +
             Math.floor( monitor.height / 2 - messages[lastItem].height / 2 )
-        )
+    )
     if ( fadeTime > 0 ) removeUserNotification( label, fadeTime )
 
     return label
@@ -149,3 +158,142 @@ export function removeAllUserNotifications( fadeTime ) {
         removeUserNotification( message, fadeTime )
     }, this )
 }
+
+export function createTooltip( widget, tooltip ) {
+    try {
+        if ( !tooltip ) return
+        widget.tooltip = tooltip
+
+        if ( widget.tooltipEnterEvent ) widget.disconnect( widget.tooltipEnterEvent )
+        if ( widget.tooltipLeaveEvent ) widget.disconnect( widget.tooltipLeaveEvent )
+        if ( widget.tooltipPressEvent ) widget.disconnect( widget.tooltipPressEvent )
+        if ( widget.notificationLabel ) {
+            removeUserNotification( widget.notificationLabel, 0.1 )
+            widget.notificationLabel = false
+            widget.hovering = false
+        }
+
+        widget.tooltipEnterEvent = widget.connect( "enter_event", () => {
+            widget.hovering = true
+            // Cancel any pending tooltip timer from a previous enter
+            if ( widget._tooltipTimerId ) { GLib.Source.remove( widget._tooltipTimerId ); widget._tooltipTimerId = 0 }
+            widget._tooltipTimerId = GLib.timeout_add( null, widget.tooltip.delay || 700, () => {
+                widget._tooltipTimerId = 0
+                // Ensure there is only one notification per widget
+                if ( widget.notificationLabel ) return false
+                // Create message
+                if ( widget.hovering && !widget.notificationLabel && widget.tooltip.force ) {
+                    widget.notificationLabel = showUserNotification(
+                        widget.tooltip.msg, widget.tooltip.overviewMessage || false, widget.tooltip.fadeTime || 0
+                    )
+                    widget.notificationLabel.attachedTo = widget
+                }
+                // Make sure they're eventually removed for any missed cases
+                widget._tooltipDisappearId = GLib.timeout_add(
+                    null,
+                    widget.tooltip.disappearTime || 4000,
+                    () => {
+                        widget._tooltipDisappearId = 0
+                        if ( widget.notificationLabel )
+                            removeUserNotification( widget.notificationLabel, 1 )
+                        return false
+                    }
+                )
+                Me.signals.add( widget._tooltipDisappearId )
+                return false
+            } )
+            Me.signals.add( widget._tooltipTimerId )
+
+            //return Clutter.EVENT_STOP;
+        } )
+        widget.tooltipLeaveEvent = widget.connect( "leave_event", () => {
+            widget.hovering = false
+            if ( widget._tooltipTimerId ) { GLib.Source.remove( widget._tooltipTimerId ); widget._tooltipTimerId = 0 }
+            if ( widget.notificationLabel )
+                removeUserNotification( widget.notificationLabel, widget.tooltip.leaveFadeTime || 1.4 )
+            //return Clutter.EVENT_STOP;
+        } )
+
+        widget.tooltipPressEvent = widget.connect( "button-press-event", () => {
+            widget.hovering = false
+            widget.notificationLabel && removeUserNotification( widget.notificationLabel, 0.7 )
+        } )
+        if ( widget instanceof popupMenu.PopupSwitchMenuItem )
+            widget.connect( "toggled", () => {
+                widget.hovering = false
+                widget.notificationLabel && removeUserNotification( widget.notificationLabel, 0.7 )
+            } )
+    } catch ( e ) { dev.log( e ) }
+}
+
+export let knownImages = {} // Save on resources generating these in menu refreshes
+const KNOWN_IMAGES_MAX = 20
+export function clearKnownImages() {
+    knownImages = {}
+}
+export function setImage( parent, imgFilePath = "" ) {
+    try {
+        let error
+        let image
+        imgFilePath = imgFilePath.replace( "file://", "" )
+
+
+        if ( knownImages[imgFilePath] ) {
+            image = knownImages[imgFilePath]
+        } else if ( imgFilePath ) {
+            let pixbuf
+            try {
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale( imgFilePath, -1, 150, true )
+            } catch ( e ) {
+                dev.log( e )
+                // if ( e instanceof GLib.FileError )
+                // not a valid image file - sometimes it's set to an .xml slideshow file
+                return [null, e]
+            }
+            if ( pixbuf === null ) // file doesnt exist
+                return [( imgFilePath = "" ), new Error( "Null pixbuf" )]
+
+            const { width, height } = pixbuf
+            if ( height == 0 ) return
+
+            const coglContext = global.stage.context.get_backend().get_cogl_context()
+            image = new St.ImageContent( {
+                preferred_width  : width,
+                preferred_height : height
+            } )
+
+            let success = image.set_data(
+                coglContext,
+                pixbuf.get_pixels(),
+                pixbuf.get_has_alpha()
+                    ? Cogl.PixelFormat.RGBA_8888
+                    : Cogl.PixelFormat.RGB_888,
+                width,
+                height,
+                pixbuf.get_rowstride()
+            )
+
+            if ( !success ) throw Error( "error creating Clutter.Image()" )
+
+            knownImages[imgFilePath] = image
+            const keys = Object.keys( knownImages )
+            if ( keys.length > KNOWN_IMAGES_MAX )
+                delete knownImages[keys[0]]
+        }
+
+        // Set the image content on parent (for both cached and newly loaded images)
+        if ( image ) {
+            parent.imgSrc = imgFilePath
+            parent.content = image
+            parent.height = 150
+        } else {
+            // No image file path - clear the content instead of setting empty image
+            parent.imgSrc = ""
+            parent.content = null
+            parent.height = 150
+        }
+
+        return [image, error]
+    } catch ( e ) { dev.log( e ) }
+}
+

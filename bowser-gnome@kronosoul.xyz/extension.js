@@ -25,7 +25,6 @@
 
 // External imports
 import * as Main from "resource:///org/gnome/shell/ui/main.js"
-import * as extensionSystem from "resource:///org/gnome/shell/ui/extensionSystem.js"
 import GLib from "gi://GLib"
 import Gio from "gi://Gio"
 import Clutter from "gi://Clutter"
@@ -55,6 +54,8 @@ export default class BowserGnome extends Extension {
             fileUtils.enable()
             if ( this.bowserIndicator ) return // Already initialized
 
+            this.signals = new utils.SignalHandler()
+
             this.URIs = Array()
             this.PYBOWSER = false
             this.settings = this.getSettings( this.metadata["settings-schema"] )
@@ -75,6 +76,12 @@ export default class BowserGnome extends Extension {
             if ( this.bowserIndicator ) this.bowserIndicator.destroy(); delete this.bowserIndicator
             if ( this.URIs ) delete this.URIs
             if ( this.PYBOWSER ) delete this.PYBOWSER
+            if ( this.uriListSettingsHandler ) {
+                this.settings.disconnect( this.uriListSettingsHandler )
+                this.uriListSettingsHandler = null
+            }
+            if ( this.settings ) this.settings = null
+            if ( this.signals ) this.signals.destroy()
         } catch ( e ) { dev.log( e ) }
     }
 

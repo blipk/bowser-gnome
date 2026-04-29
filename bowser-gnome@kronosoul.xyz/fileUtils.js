@@ -31,15 +31,16 @@ import Shell from "gi://Shell"
 // Internal imports
 import { BowserGnomeInstance as Me } from "./extension.js"
 import * as dev from "./dev.js"
-import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
 // Directory and file paths for resources
-export let USER_CONF_DIR = GLib.get_user_config_dir()
-export let USER_CACHE_DIR = GLib.get_user_cache_dir()
-export let USER_DATA_DIR = GLib.get_user_data_dir()
-export let SYS_DATA_DIRS = GLib.get_system_data_dirs()
+export const USER_CONF_DIR = GLib.get_user_config_dir()
+export const USER_CACHE_DIR = GLib.get_user_cache_dir()
+export const USER_DATA_DIR = GLib.get_user_data_dir()
+export const SYS_DATA_DIRS = GLib.get_system_data_dirs()
+export const CONF_DIR = () => GLib.build_pathv( "/", [USER_CONF_DIR, Me.uuid] )
 
-export let RES_PATH, INSTALL_DIR, CONF_DIR, PYBOWSER_CONF_DIR, BOWSER_EXEC_FILE,
+
+export let RES_PATH, INSTALL_DIR, PYBOWSER_CONF_DIR, BOWSER_EXEC_FILE,
 RES_FILE, URI_FILE, PNG_ICON_FILE, SVG_ICON_FILE,
 DESKTOP_FILE, PYBOWSER_DESKTOP_FILE, PYBOWSER_CONF_FILE, PYBOWSER_EXEC_FILE
 
@@ -53,13 +54,12 @@ export function enable() {
                         ? GLib.build_pathv( "/", [USER_DATA_DIR, "gnome-shell", "extensions", Me.uuid] )
                         : GLib.build_pathv( "/", ["usr", "share", "gnome-shell", "extensions", Me.uuid] )
 
-    CONF_DIR = GLib.build_pathv( "/", [USER_CONF_DIR, Me.uuid] )
     PYBOWSER_CONF_DIR = GLib.build_pathv( "/", [USER_CONF_DIR, "bowser"] )
 
     BOWSER_EXEC_FILE = GLib.build_filenamev( [INSTALL_DIR, "bowser.js"] )
 
     RES_FILE = GLib.build_filenamev( [INSTALL_DIR, "org.kronosoul.Bowser.gresource"] )
-    URI_FILE = GLib.build_filenamev( [CONF_DIR, ".uris"] )
+    URI_FILE = GLib.build_filenamev( [CONF_DIR(), ".uris"] )
     PNG_ICON_FILE = GLib.build_filenamev( [USER_DATA_DIR, "/icons/hicolor/256x256/apps/bowser.png"] )
     SVG_ICON_FILE = GLib.build_filenamev( [USER_DATA_DIR, "/icons/hicolor/scalable/apps/bowser.svg"] )
 
@@ -70,11 +70,11 @@ export function enable() {
 }
 export const BOWSER_CONF_FILE = function() {
     if ( Me.PYBOWSER ) return PYBOWSER_CONF_FILE
-    else return GLib.build_filenamev( [CONF_DIR, "bowser.conf"] )
+    else return GLib.build_filenamev( [CONF_DIR(), "bowser.conf"] )
 }
 export const BOWSER_CONF_DIR = function() {
     if ( Me.PYBOWSER ) return PYBOWSER_CONF_DIR
-    else return CONF_DIR
+    else return CONF_DIR()
 }
 
 export function checkExists( path ) {
@@ -91,32 +91,36 @@ export function checkExists( path ) {
     return result
 }
 // Disk I/O handlers
-export function enumarateDirectoryChildren( directory=CONF_DIR, returnFiles=true, returnDirectories=false, searchSubDirectories=false, searchLevel=1/*-1 for infinite*/ ){
-    let childrenFileProperties = {parentDirectory: directory, fullname: null, name: null, extension: null, type: null}
+export function enumarateDirectoryChildren(
+    /*-1 searchLevel for infinite*/
+    directory = CONF_DIR(), returnFiles = true, returnDirectories = false, searchSubDirectories = false, searchLevel = 1
+) {
+    directory = directory || CONF_DIR()
+    let childrenFileProperties = { parentDirectory: directory, fullname: null, name: null, extension: null, type: null }
     let childrenFilePropertiesArray = []
 
     let directoryFile = Gio.file_new_for_path( directory )
-    if ( !directoryFile.query_exists( null ) ) throw Error( directory+" not found" )
-    let children = directoryFile.enumerate_children( "standard::name,standard::type", Gio.FileQueryInfoFlags.NONE, null )
+    if ( !directoryFile.query_exists( null ) ) throw Error( directory + " not found" )
+    let children = directoryFile.enumerate_children( "standard::name,standard::type", Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null )
 
     let fileIterator
     while ( ( fileIterator = children.next_file( null ) ) != null ) {
         let type = fileIterator.get_file_type()
         let name = fileIterator.get_name()
         let tmpExtension = name.split( "." )
-        let extension = tmpExtension[tmpExtension.length-1]
+        let extension = tmpExtension[tmpExtension.length - 1]
         tmpExtension.pop()
         let nameWithoutExtension = tmpExtension.join( "." )
 
         if ( type == Gio.FileType.REGULAR ) {
             if ( returnFiles )
-                childrenFilePropertiesArray.push( {parentDirectory: directory, fullname: name, name: nameWithoutExtension, extension: extension, type: type} )
+                childrenFilePropertiesArray.push( { parentDirectory: directory, fullname: name, name: nameWithoutExtension, extension: extension, type: type } )
         } else if ( type == Gio.FileType.DIRECTORY ) {
             if ( returnDirectories )
-                childrenFilePropertiesArray.push( {parentDirectory: directory, fullname: name, name: nameWithoutExtension, extension: extension, type: type} )
+                childrenFilePropertiesArray.push( { parentDirectory: directory, fullname: name, name: nameWithoutExtension, extension: extension, type: type } )
             if ( !searchSubDirectories ) continue
             let childDirectory = directoryFile.get_child( fileIterator.get_name() )
-            if ( searchLevel > 0 || searchLevel <= -1 ) {
+            if ( searchLevel != 0 ) {
                 childrenFilePropertiesArray.push( enumarateDirectoryChildren( childDirectory, returnDirectories, searchSubDirectories, searchLevel ) )
                 searchLevel--
             }
@@ -125,8 +129,12 @@ export function enumarateDirectoryChildren( directory=CONF_DIR, returnFiles=true
 
     return childrenFilePropertiesArray
 }
-export function saveToFile( object, filename, directory = null, raw = false, append = false, async = false ) {
-    directory = directory || CONF_DIR
+
+export function saveToFile( object, filename, directory = null, raw = false, append = false, async = true ) {
+    directory = directory || CONF_DIR()
+    // S5: Validate filename does not contain path separators
+    if ( filename.includes( "/" ) || filename.includes( "\\" ) )
+        throw Error( "Invalid filename: must not contain path separators" )
     let savePath = GLib.build_filenamev( [directory,
         filename] )
     let outBuff
@@ -136,14 +144,14 @@ export function saveToFile( object, filename, directory = null, raw = false, app
     let contents = new GLib.Bytes( outBuff )
 
     // Make sure dir exists
-    GLib.mkdir_with_parents( directory, parseInt( "0775", 8 ) )
+    GLib.mkdir_with_parents( directory, parseInt( "0700", 8 ) )
     let file = Gio.file_new_for_path( savePath )
     if ( async ) {
         if ( append ) {
             file.append_to_async(
                 Gio.FileCreateFlags.NONE,
                 GLib.PRIORITY_DEFAULT, null,
-                function ( obj, res ) { aSyncSaveCallback( obj, res, contents ) }
+                function ( obj, res ) { aSyncSaveCallback( obj, res, contents, true ) }
             )
         } else {
             file.replace_async(
@@ -167,7 +175,52 @@ export function saveToFile( object, filename, directory = null, raw = false, app
         }
     }
 }
-export function saveJSObjectToFile ( jsobject, filename, directory=CONF_DIR, append=false, async=false ) {
+
+export function aSyncSaveCallback( obj, res, contents, isAppend = false ) {
+    let stream = isAppend ? obj.append_to_finish( res ) : obj.replace_finish( res )
+    stream.write_bytes_async( contents, GLib.PRIORITY_DEFAULT, null, function ( w_obj, w_res ) {
+        w_obj.write_bytes_finish( w_res ); stream.close( null )
+    } )
+}
+
+export function loadJSObjectFromFile( filename = BOWSER_CONF_FILE(), directory = CONF_DIR(), callback = null, async = false ) {
+    directory = directory || CONF_DIR()
+    let loadPath = GLib.build_filenamev(
+        [directory, filename]
+    )
+    let jsobject
+
+    let file = Gio.file_new_for_path( loadPath )
+
+    if ( !file.query_exists( null ) ) { throw Error( "File does not exist: " + loadPath ) }
+    if ( async === true ) {
+        if ( typeof callback !== "function" ) { throw TypeError( "loadJSObjectFromFile callback must be a function" ) }
+
+        file.query_info_async( "*", Gio.FileQueryInfoFlags.NONE, GLib.PRIORITY_DEFAULT, null, function ( src, res ) {
+            // const file_info = src.query_info_finish( res )
+            file.load_contents_async( null, function ( obj, res ) {
+                let [
+                    success, contents
+                ] = obj.load_contents_finish( res )
+                if ( success ) {
+                    jsobject = JSON.parse( new TextDecoder().decode( contents ) )
+                    if ( jsobject === undefined ) { throw SyntaxError( "Error parseing file contents to JS Object. Syntax Error?" ) }
+                    callback( jsobject )
+                }
+            } )
+        } )
+    } else {
+        //let buffer = file.load_contents(null, null, null);
+        let buffer = file.load_contents( null )
+        let contents = buffer[1]
+        jsobject = JSON.parse( new TextDecoder().decode( contents ) )
+        if ( jsobject === undefined ) { throw SyntaxError( "Error parseing file contents to JS Object. Syntax Error." ) }
+    }
+
+    return jsobject
+}
+
+export function saveJSObjectToFile ( jsobject, filename, directory=CONF_DIR(), append=false, async=false ) {
     let savePath = GLib.build_filenamev( [directory, filename] )
     let jsonString = JSON.stringify( jsobject, null, 1 )
     let contents = new GLib.Bytes( jsonString )
@@ -195,45 +248,6 @@ export function saveJSObjectToFile ( jsobject, filename, directory=CONF_DIR, app
         }
     }
     } catch( e ) {dev.log( e )}
-}
-export function aSyncSaveCallback( obj, res, contents ) {
-    let stream = obj.replace_finish( res )
-
-    stream.write_bytes_async( contents, GLib.PRIORITY_DEFAULT, null, function ( w_obj, w_res ) {
-        w_obj.write_bytes_finish( w_res ); stream.close( null )
-    } )
-}
-
-export function loadJSObjectFromFile( filename=BOWSER_CONF_FILE, directory=CONF_DIR, callback=null, async=false ) {
-    let loadPath = GLib.build_filenamev( [directory, filename] )
-    let jsobject
-
-    let file = Gio.file_new_for_path( loadPath )
-
-    if ( !GLib.file_test( loadPath, GLib.FileTest.EXISTS ) ) { throw Error( "File does not exist: "+loadPath ) }
-    if ( async === true ) {
-        if ( typeof callback !== "function" ) {throw TypeError( "loadJSObjectFromFile callback must be a function" )}
-
-        file.query_info_async( "*", Gio.FileQueryInfoFlags.NONE, GLib.PRIORITY_DEFAULT, null, function ( src, res ) {
-            let file_info = src.query_info_finish( res )
-            file.load_contents_async( null, function ( obj, res ) {
-                let [success, contents] = obj.load_contents_finish( res )
-                if ( success ) {
-                    jsobject = JSON.parse( new TextDecoder().decode( contents ) )
-                    if( jsobject === undefined ) {throw SyntaxError( "Error parseing file contents to JS Object. Syntax Error?" )}
-                    callback( jsobject )
-                }
-            } )
-        } )
-    } else {
-        //let buffer = file.load_contents(null, null, null);
-        let buffer = file.load_contents( null )
-        let contents = buffer[1]
-        jsobject = JSON.parse( new TextDecoder().decode( contents ) )
-        if( jsobject === undefined ) {throw SyntaxError( "Error parseing file contents to JS Object. Syntax Error." )}
-    }
-
-    return jsobject
 }
 
 
@@ -264,7 +278,7 @@ export function installResource( src, target ) {
         else {
             source = new TextDecoder().decode( bytes.toArray() )
             source = source.replace( "@INSTALLDIR@", INSTALL_DIR )
-                  .replace( "@CONFDIR@", CONF_DIR )
+                  .replace( "@CONFDIR@", CONF_DIR() )
         }
 
         return installFile( target, source )

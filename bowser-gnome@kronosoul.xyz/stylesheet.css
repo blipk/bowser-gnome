@@ -14,6 +14,14 @@
     icon-size:16px;
 }
 
+.bowser-icon-button {
+    padding: 0px;
+    margin: 0px;
+}
+.bowser-icon-button StIcon {
+    icon-size:16px;
+}
+
 /* Dialog General */
 entry:indeterminate { background-color: #20395a; }
 .object-dialog {

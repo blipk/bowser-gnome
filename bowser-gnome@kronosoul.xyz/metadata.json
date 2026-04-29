@@ -1,4 +1,5 @@
-{   "uuid": "bowser-gnome@kronosoul.xyz",
+{
+    "uuid": "bowser-gnome@kronosoul.xyz",
 
     "name": "Bowser Gnome Extension",
     "url": "https://github.com/blipk/bowser-gnome",
@@ -12,5 +13,5 @@
     "settings-schema": "org.gnome.shell.extensions.Bowser",
     "settings-path": "/org/gnome/shell/extensions/Bowser/",
     "gettext-domain": "bowser-gnome",
-    "shell-version": ["45", "46"]
+    "shell-version": ["49", "50"]
 }
