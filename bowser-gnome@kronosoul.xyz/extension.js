@@ -39,6 +39,7 @@ import * as fileUtils from "./fileUtils.js"
 import * as uiUtils from "./uiUtils.js"
 import * as dialogs from "./dialogs.js"
 import * as panelIndicator from "./panelIndicator.js"
+import { InputValidator } from "./inputValidator.js"
 
 
 import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
@@ -73,7 +74,10 @@ export default class BowserGnome extends Extension {
     disable() {
         try {
             uiUtils.destroy()
-            if ( this.bowserIndicator ) this.bowserIndicator.destroy(); delete this.bowserIndicator
+            if ( this.bowserIndicator ) {
+                this.bowserIndicator.destroy()
+                delete this.bowserIndicator
+            }
             if ( this.URIs ) delete this.URIs
             if ( this.PYBOWSER ) delete this.PYBOWSER
             if ( this.uriListSettingsHandler ) {
@@ -87,8 +91,10 @@ export default class BowserGnome extends Extension {
 
     _checkBowser() {
         try {
+            // PYBOWSER must be set before BOWSER_CONF_FILE/BOWSER_CONF_DIR are called,
+            // since both branch on it.
+            this.PYBOWSER = fileUtils.checkExists( [fileUtils.PYBOWSER_EXEC_FILE] )
             this._installbowser()
-            if ( fileUtils.checkExists( [fileUtils.PYBOWSER_EXEC_FILE] ) ) this.PYBOWSER = true
             if ( !fileUtils.checkExists( [fileUtils.BOWSER_CONF_FILE()] ) ) this.makeConfiguration()
             this.loadConfiguration()
         } catch ( e ) { dev.log( e ) }
@@ -107,7 +113,7 @@ export default class BowserGnome extends Extension {
             if ( !fileUtils.checkExists( [fileUtils.DESKTOP_FILE] ) ) {
                 checkLoadResources()
                 fileUtils.installResource( "res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE )
-                GLib.spawn_command_line_sync( "xdg-desktop-menu install " + fileUtils.CONF_DIR + "/bowser-gnome.desktop --novendor" )
+                GLib.spawn_command_line_sync( "xdg-desktop-menu install " + fileUtils.CONF_DIR() + "/bowser-gnome.desktop --novendor" )
             }
 
             // Set as default and set our URI passing script to executable
@@ -137,9 +143,16 @@ export default class BowserGnome extends Extension {
             this.uriListSettingsHandler = this.settings.connect( "changed::uri-list", () => {
                 if ( this.settings.processing ) return
                 this.settings.processing = true
-                this.URIs = this.URIs.concat( JSON.parse( this.settings.get_string( "uri-list" ) ) )
+                let incoming = JSON.parse( this.settings.get_string( "uri-list" ) )
+                // Drop garbage entries: literal undefined/null, the string "undefined",
+                // empty strings, and anything that isn't a string. Trim whitespace.
+                incoming = incoming
+                    .filter( ( u ) => typeof u === "string" )
+                    .map( ( u ) => u.trim() )
+                    .filter( ( u ) => u !== "" && u !== "undefined" && u !== "null" )
+                this.URIs = this.URIs.concat( incoming )
                 this.settings.set_string( "uri-list", "[]" )
-                this.processURIs()
+                if ( this.URIs.length > 0 ) this.processURIs()
                 this.settings.processing = false
             } )
         } catch ( e ) { dev.log( e ) }
@@ -171,38 +184,66 @@ export default class BowserGnome extends Extension {
         try {
             let URI = this.URIs[0]
             if ( overrideURI ) URI = overrideURI
-            let matchFound = false
-            let matchedBrowsers = Array()
+            // Guard against re-entrancy from duplicate event handlers and stale callbacks.
+            if ( !URI || typeof URI !== "string" || URI === "undefined" ) return
             let splitURI = utils.splitURI( URI )
             splitURI.pageTitle = ""
             splitURI.pageContents = ""
 
-            utils.forEachEntry( this.config.uriPrefs, function ( prefKey, prefValues, i ) {
+            // Prefetch page content only if some rule actually opts in via
+            // pageTitle/pageContents on its uriOptions (the per-rule flag IS the toggle).
+            let needsFetch = false
+            utils.forEachEntry( this.config.uriPrefs, function ( prefKey ) {
+                let opts = this.config.uriPrefs[prefKey].uriOptions || {}
+                if ( opts.pageTitle || opts.pageContents ) needsFetch = true
+            }, this )
+
+            if ( needsFetch ) {
+                this._fetchPageContent( URI, ( title, body ) => {
+                    splitURI.pageTitle = title || " "
+                    splitURI.pageContents = body || " "
+                    this._matchAndLaunch( URI, splitURI, askOnUnmatchedURI )
+                } )
+            } else {
+                this._matchAndLaunch( URI, splitURI, askOnUnmatchedURI )
+            }
+        } catch ( e ) { dev.log( e ) }
+    }
+
+    _fetchPageContent( URI, callback ) {
+        try {
+            const session = new Soup.Session()
+            session.timeout = 3
+            const msg = Soup.Message.new( "GET", URI )
+            if ( !msg ) { callback( "", "" ); return }
+            session.send_and_read_async( msg, GLib.PRIORITY_DEFAULT, null, ( s, res ) => {
+                try {
+                    const bytes = s.send_and_read_finish( res )
+                    if ( msg.get_status() !== 200 || !bytes ) { callback( "", "" ); return }
+                    const html = new TextDecoder().decode( bytes.toArray() ).toLowerCase()
+                    const match = html.match( /<title>[^<]*/ )
+                    callback( match ? match[0] : "", html )
+                } catch ( e ) { dev.log( e ); callback( "", "" ) }
+            } )
+        } catch ( e ) { dev.log( e ); callback( "", "" ) }
+    }
+
+    _matchAndLaunch( URI, splitURI, askOnUnmatchedURI ) {
+        try {
+            let matchFound = false
+            let matchedBrowsers = Array()
+
+            utils.forEachEntry( this.config.uriPrefs, function ( prefKey ) {
                 let compareURI = ""
 
-                utils.forEachEntry( this.config.uriPrefs[prefKey].uriOptions, function ( optionKey, optionValue, n ) {
+                utils.forEachEntry( this.config.uriPrefs[prefKey].uriOptions, function ( optionKey, optionValue ) {
                     if ( !optionValue || !splitURI[optionKey] ) return
                     if ( optionValue && optionKey != "scheme" ) compareURI += splitURI[optionKey].toLowerCase()
 
-                    // Search page titles and contents
-                    if ( ( splitURI["pageContents"] == "" ) && ( optionKey == "pageTitle" || optionKey == "pageContents" ) ) {
-                        let msg = Soup.Message.new_from_uri( "GET", new Soup.URI( URI ) )
-                        let httpSession = new Soup.Session()
-                        httpSession.timeout = 3
-                        httpSession.send_message( msg )
-                        if ( msg.status_code === 200 ) {
-                            try {
-                                splitURI["pageContents"] = msg.response_body.data.toLowerCase()
-                                if ( splitURI["pageContents"] ) splitURI["pageTitle"] = splitURI["pageContents"].match( /<title>[^<]*/ )[0]
-                            } catch ( e ) { dev.log( e ) } finally { splitURI["pageContents"] = " " }
-                        } else {
-                            splitURI["pageContents"] = " " // If we don't get an OK response, set this so we don't keep trying
-                        }
-                    }
-
-                    if ( splitURI[optionKey].indexOf( prefKey.toLowerCase() ) > -1 || ( compareURI.indexOf( prefKey.toLowerCase() ) > -1 && compareURI ) ) {
+                    if ( splitURI[optionKey].indexOf( prefKey.toLowerCase() ) > -1
+                        || ( compareURI.indexOf( prefKey.toLowerCase() ) > -1 && compareURI ) ) {
                         let browserAlreadyOpened = false
-                        matchedBrowsers.forEach( function ( entry, i ) {
+                        matchedBrowsers.forEach( function ( entry ) {
                             if ( entry == this.config.uriPrefs[prefKey].defaultBrowser ) browserAlreadyOpened = true
                         }, this )
                         if ( matchFound && browserAlreadyOpened ) return
@@ -277,6 +318,11 @@ export default class BowserGnome extends Extension {
 
             editables[i + 1].boxClickCallback = function ( i ) {
                 try {
+                // The propertyBox and the inner labelled button both fire button-press-event
+                // on a single click. Without this guard, we'd create the rule twice and
+                // call openBrowser() a second time after the URI has already been shifted
+                // off — producing a follow-up "undefined" unmatched-URI dialog.
+                if ( this.editableObject.ruleCreated ) return
                 // Create rule
                 let outURI = ""
 
@@ -323,8 +369,13 @@ export default class BowserGnome extends Extension {
             } else {
                 if ( utils.isEmpty( configObject ) ) return
                 this.config = JSON.parse( JSON.stringify( configObject ) )
+                return
             }
-        } catch ( e ) { dev.log( e ) }
+        } catch ( e ) {
+            dev.log( e )
+        }
+        // Fall back: ensure this.config exists so the indicator can build.
+        if ( utils.isEmpty( this.config ) ) this.makeConfiguration()
     }
     saveConfiguration( filename = "bowser.conf", filedirectory = fileUtils.BOWSER_CONF_DIR() ) {
         try {
@@ -426,7 +477,13 @@ export default class BowserGnome extends Extension {
     }
     enableBowser() {
         try {
-            util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
+            // Verify integrity before granting +x to avoid trusting a tampered bowser.js
+            const chmodCheck = InputValidator.ensureBowserExecutable()
+            if ( chmodCheck.error ) {
+                uiUtils.showUserNotification( "Cannot enable Bowser: " + chmodCheck.error )
+                return
+            }
+            if ( chmodCheck.needsChmod ) util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
 
             let result = this.setxdgDefaultBrowser()
             let msg = "Bowser has been Enabled"

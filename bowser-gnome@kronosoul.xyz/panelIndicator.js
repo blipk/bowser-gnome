@@ -50,7 +50,11 @@ export const BowserIndicator = GObject.registerClass( {
 }, class BowserIndicator extends panelMenu.Button {
     destroy() {
         try {
-            //this.disconnectAll();
+            if ( this._bowserToggleId && this.bowserMenuItem ) this.bowserMenuItem.disconnect( this._bowserToggleId )
+            if ( this._askToggleId && this.toggleAskMenuItem ) this.toggleAskMenuItem.disconnect( this._askToggleId )
+            if ( this._defaultBrowsersOpenStateId && this.defaultBrowsersSubMenu )
+                this.defaultBrowsersSubMenu.menu.disconnect( this._defaultBrowsersOpenStateId )
+            this._prefMenuItemsRemoveAll()
             super.destroy()
             delete Main.panel.statusArea["BowserIndicator"]
         } catch ( e ) { dev.log( e ) }
@@ -68,10 +72,8 @@ export const BowserIndicator = GObject.registerClass( {
                     opacity     : 140
                 }
             )
-            hbox.add_child( this.icon );
-            //let buttonText = new St.Label(    {text: (''), y_align: Clutter.ActorAlign.CENTER }   );
-            //hbox.add_child(buttonText);
-            ( this.add_child ) ? this.add_child( hbox ) : this.actor.add_child( hbox )
+            hbox.add_child( this.icon )
+            this.add_child( hbox )
 
             //Build our menu
             this._buildMenu()
@@ -87,17 +89,19 @@ export const BowserIndicator = GObject.registerClass( {
         try {
             // Enable/Disable Bowser switch
             this.bowserMenuItem = new popupMenu.PopupSwitchMenuItem( _( "Bowser" ), BOWSER_ENABLED, { reactive: true } )
-            this.bowserMenuItem.connect( "button-press-event", () => { this._onBowserSwitch( this.bowserMenuItem ) } )
+            this._bowserToggleId = this.bowserMenuItem.connect( "toggled", ( item, state ) => { this._onBowserSwitch( item, state ) } )
             this.menu.addMenuItem( this.bowserMenuItem )
 
             // Always ask switch
             this.toggleAskMenuItem = new popupMenu.PopupSwitchMenuItem( _( "Create rules on new links" ), ASK_ENABLED, { reactive: true } )
-            this.toggleAskMenuItem.connect( "button-press-event", this._onAskSwitch )
+            this._askToggleId = this.toggleAskMenuItem.connect( "toggled", ( item, state ) => { this._onAskSwitch( item, state ) } )
             this.menu.addMenuItem( this.toggleAskMenuItem )
 
             // Add Default Browser switcher
             this.defaultBrowsersSubMenu = new popupMenu.PopupSubMenuMenuItem( "Browsers", true )
-            this.defaultBrowsersSubMenu.actor.connect( "button-press-event", () => { this._defaultBrowsersSubMenuRefresh() } )
+            this._defaultBrowsersOpenStateId = this.defaultBrowsersSubMenu.menu.connect( "open-state-changed", ( m, open ) => {
+                if ( open ) this._defaultBrowsersSubMenuRefresh()
+            } )
             this.defaultBrowsersSubMenu.icon.icon_name = Me.config.browserApps[Me.config.defaultBrowser][3] ?
                 Me.config.browserApps[Me.config.defaultBrowser][3] : "web-browser-symbolic"
             this.menu.addMenuItem( this.defaultBrowsersSubMenu )
@@ -108,14 +112,12 @@ export const BowserIndicator = GObject.registerClass( {
             this.menu.addMenuItem( new popupMenu.PopupSeparatorMenuItem() )
 
             // Menu section for Bowser Preferences/Rules
+            // Added directly to this.menu so that PopupSubMenuMenuItem children can walk
+            // up to a real PopupMenu via _getTopMenu(); wrapping in a St.ScrollView breaks
+            // that chain (the scroll view is not a menu actor, so _setOpenedSubMenu is
+            // missing and the submenu open-state-changed handler crashes).
             this.preferencesSection = new popupMenu.PopupMenuSection()
-            this.scrollViewPreferencesMenuSection = new popupMenu.PopupMenuSection()
-            let preferencesScrollView = new St.ScrollView( {
-                style_class: "ci-history-menu-section", overlay_scrollbars: true
-            } )
-            preferencesScrollView.add_child( this.preferencesSection.actor )
-            this.scrollViewPreferencesMenuSection.actor.add_child( preferencesScrollView )
-            this.menu.addMenuItem( this.scrollViewPreferencesMenuSection )
+            this.menu.addMenuItem( this.preferencesSection )
 
             // Add separator
             this.menu.addMenuItem( new popupMenu.PopupSeparatorMenuItem() )
@@ -147,14 +149,22 @@ export const BowserIndicator = GObject.registerClass( {
             Me.saveConfiguration()
 
             //Refresh state switches
-            let browser = Me.getxdgDefaultBrowser()
-            BOWSER_ENABLED = ( browser == "bowser.desktop" || browser == "bowser-gnome.desktop" ) ? true : false
-            this.bowserMenuItem.nameText = BOWSER_ENABLED ? "Bowser Enabled" : "Bowser Disabled"
-            this._prefMenuItemSetEntryLabel( this.bowserMenuItem )
-            this.bowserMenuItem.setToggleState( BOWSER_ENABLED )
+            // Suppress toggle handlers while syncing UI state to config; setToggleState
+            // synthesizes the "toggled" signal and would otherwise re-invoke
+            // enableBowser/disableBowser on every menu open.
+            this._suppressToggleHandler = true
+            try {
+                let browser = Me.getxdgDefaultBrowser()
+                BOWSER_ENABLED = ( browser == "bowser.desktop" || browser == "bowser-gnome.desktop" ) ? true : false
+                this.bowserMenuItem.nameText = BOWSER_ENABLED ? "Bowser Enabled" : "Bowser Disabled"
+                this._prefMenuItemSetEntryLabel( this.bowserMenuItem )
+                this.bowserMenuItem.setToggleState( BOWSER_ENABLED )
 
-            ASK_ENABLED = Me.config.askOnUnmatchedURI ? true : false
-            this.toggleAskMenuItem.setToggleState( ASK_ENABLED )
+                ASK_ENABLED = Me.config.askOnUnmatchedURI ? true : false
+                this.toggleAskMenuItem.setToggleState( ASK_ENABLED )
+            } finally {
+                this._suppressToggleHandler = false
+            }
 
             this._defaultBrowsersSubMenuRefresh( true )
         } catch ( e ) { dev.log( e ) }
@@ -170,7 +180,9 @@ export const BowserIndicator = GObject.registerClass( {
             this._prefMenuItemSetEntryLabel( menuItem )
 
             // Connect menuitem and its iconbuttons
-            menuItem.buttonPressId = menuItem.connect( "button-press-event", () => { this._preferenceBrowserMenuRefresh( menuItem ) } )
+            menuItem.openStateId = menuItem.menu.connect( "open-state-changed", ( m, open ) => {
+                if ( open ) this._preferenceBrowserMenuRefresh( menuItem )
+            } )
 
             // Create iconbuttons on MenuItem
             uiUtils.createIconButton( menuItem, "document-edit-symbolic", () => { this._editRule( menuItem ) } )
@@ -214,9 +226,9 @@ export const BowserIndicator = GObject.registerClass( {
                 menuItem.prefvalue.defaultBrowser = browserAppKey
                 Me.saveConfiguration()
                 uiUtils.showUserNotification( menuItem.nameText + " will now open with " + name, true )
-                this._preferenceBrowserMenuRefresh( menuItem )
-                menuItem.setSubmenuShown( false )
-                menuItem.menu.itemActivated( boxpointer.PopupAnimation.NONE )
+                // Don't rebuild the submenu here — destroying these items mid-activate
+                // produces "already disposed" warnings. The open-state-changed handler
+                // will rebuild with the updated dot ornament next time it opens.
             } );
             ( menuItem.prefvalue.defaultBrowser == browserAppKey ) ?
                 menuItem.prefBrowsersMenuItems[i].setOrnament( popupMenu.Ornament.DOT ) : menuItem.prefBrowsersMenuItems[i].setOrnament( popupMenu.Ornament.NONE )
@@ -245,8 +257,9 @@ export const BowserIndicator = GObject.registerClass( {
                 Me.config.defaultBrowser = browserAppKey
                 Me.saveConfiguration()
                 uiUtils.showUserNotification( name + " is now your default browser.", true )
-                this._defaultBrowsersSubMenuRefresh()
-                this.menu.itemActivated( boxpointer.PopupAnimation.NONE )
+                // Update the submenu's icon/name only (no destructive rebuild).
+                // Full rebuild happens via the submenu's open-state-changed handler.
+                this._defaultBrowsersSubMenuRefresh( true )
             } );
             ( Me.config.defaultBrowser == browserAppKey ) ? this.webbrowsersMenuItems[i].setOrnament( popupMenu.Ornament.CHECK ) : this.webbrowsersMenuItems[i].setOrnament( popupMenu.Ornament.NONE )
             //uiUtils.createIconButton(this.webbrowsersMenuItems[i], icon, () => {});
@@ -270,12 +283,18 @@ export const BowserIndicator = GObject.registerClass( {
         return this.preferencesSection._getMenuItems()
     }
     _prefMenuItemsRemoveAll() {
-        this._prefMenuItemsGetAll().forEach( function ( mItem ) { mItem.destroy() } )
+        this._prefMenuItemsGetAll().forEach( function ( mItem ) {
+            if ( mItem.openStateId && mItem.menu ) mItem.menu.disconnect( mItem.openStateId )
+            mItem.destroyIconButtons?.()
+            mItem.destroy()
+        } )
     }
     _prefMenuItemRemoveEntry( menuItem, showMsg = true ) {
         try {
             Me.config.uriPrefs = utils.filterObj( Me.config.uriPrefs, ( [name, value] ) => ( name !== menuItem.prefkey && value !== menuItem.prefvalue ) )
             if ( showMsg ) uiUtils.showUserNotification( "Deleted rule: " + menuItem.nameText, true )
+            if ( menuItem.openStateId && menuItem.menu ) menuItem.menu.disconnect( menuItem.openStateId )
+            menuItem.destroyIconButtons?.()
             menuItem.destroy()
             Me.saveConfiguration()
             this._refreshMenu()
@@ -343,18 +362,19 @@ export const BowserIndicator = GObject.registerClass( {
             }, editable, editables, buttonStyles )
         } catch ( e ) { dev.log( e ) }
     }
-    _onBowserSwitch( menuItem ) {
-        if ( BOWSER_ENABLED ) Me.disableBowser(); else Me.enableBowser()
+    _onBowserSwitch( menuItem, state ) {
+        if ( this._suppressToggleHandler ) return
+        if ( state ) Me.enableBowser(); else Me.disableBowser()
     }
-    _onAskSwitch() {
-        Me.config.askOnUnmatchedURI = Me.config.askOnUnmatchedURI ? false : true
+    _onAskSwitch( menuItem, state ) {
+        if ( this._suppressToggleHandler ) return
+        Me.config.askOnUnmatchedURI = state
         Me.saveConfiguration()
     }
     _toggleMenu() {
         this.menu.toggle()
     }
     _openSettings() {
-        imports.misc.extensionUtils.openPrefs()
-        //Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);
+        Me.openPreferences()
     }
 } )

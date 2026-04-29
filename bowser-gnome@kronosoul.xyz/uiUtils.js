@@ -41,7 +41,7 @@ import * as dev from "./dev.js"
 
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
-import { BowserGnomeInstance as Me } from "../../extension.js"
+import { BowserGnomeInstance as Me } from "./extension.js"
 
 
 export function destroy() {
@@ -71,7 +71,7 @@ export function createIconButton( parentItem, iconNames, callback, options, tool
             child: icon, style_class: options.style_class || "bowser-icon-button", can_focus: true, x_expand: false, y_expand: false,
         } )
         iconButton.icon = icon
-        parentItem.add_child ? parentItem.add_child( iconButton ) : parentItem.actor.add_child( iconButton )
+        parentItem.add_child( iconButton )
         parentItem.iconButtons = parentItem.iconButtons || new Array()
         parentItem.iconsButtonsPressIds = parentItem.iconsButtonsPressIds || new Array()
         if ( tooltip ) {
@@ -91,12 +91,17 @@ export function createIconButton( parentItem, iconNames, callback, options, tool
         iconButton.releaseEvent = iconButton.connect( "button-release-event", () => {
             if ( iconButton.focus == true ) callback(); return Clutter.EVENT_STOP
         } )
-        parentItem.iconsButtonsPressIds.push( [iconButton.pressEvent,
+        parentItem.iconsButtonsPressIds.push( [
+            iconButton.pressEvent,
             iconButton.releaseEvent,
-            iconButton.leaveEvent] )
+            iconButton.leaveEvent,
+            iconButton.enterEvent
+        ] )
         parentItem.destroyIconButtons = function () {
-            parentItem.iconButtons.forEach( function ( iconButton ) {
-                iconButton.destroy?.()
+            parentItem.iconButtons.forEach( function ( btn, idx ) {
+                const ids = parentItem.iconsButtonsPressIds[idx] || []
+                ids.forEach( ( id ) => { try { btn.disconnect( id ) } catch ( e ) { /* already disconnected */ } } )
+                btn.destroy?.()
             }, this )
             parentItem.iconButtons = []
             parentItem.iconsButtonsPressIds = []
@@ -111,8 +116,11 @@ export function showUserNotification( input, overviewMessage = false, fadeTime =
     dev.log( "Notification", input )
     removeAllUserNotifications()
 
-    if ( overviewMessage ) {
-        Main.notify( "Customised Workspaces", _( input ) )
+    // Fall back to Main.notify if the layout manager or primary monitor isn't ready
+    // (happens during shell startup before extension enable completes).
+    const monitor = Main.layoutManager?.primaryMonitor
+    if ( overviewMessage || !monitor ) {
+        Main.notify( "Bowser", _( input ) )
         return null
     }
     const label = new St.Label( { style_class: "feedback-label", text: _( input ) } )
@@ -120,7 +128,6 @@ export function showUserNotification( input, overviewMessage = false, fadeTime =
     let lastItem = messages.length - 1
     Main.uiGroup.add_child( messages[lastItem] )
     messages[lastItem].opacity = 255
-    let monitor = Main.layoutManager.primaryMonitor
     messages[lastItem].set_position(
         monitor.x +
             Math.floor( monitor.width / 2 - messages[lastItem].width / 2 ),

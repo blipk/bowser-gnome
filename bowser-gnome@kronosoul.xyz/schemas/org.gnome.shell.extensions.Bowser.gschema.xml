@@ -6,5 +6,10 @@
       <summary>Stringified JS Array containing URIs to be opened.</summary>
       <description>Contains the URLs pased via the desktop entry to bowser.js which are then processed by the extension.</description>
     </key>
+    <key name="bowser-sha256" type="s">
+      <default>"2a7a14761cf9be6ddd2f7196c35100c32d4b731506b8ca53beaaa7b8ae4f92fd"</default>
+      <summary>bowser.js SHA256 hash</summary>
+      <description>SHA256 hash of bowser.js for integrity verification. Updated automatically by _update-bowser-hash.sh during packaging.</description>
+    </key>
   </schema>
 </schemalist>

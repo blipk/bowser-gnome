@@ -137,9 +137,11 @@ export const ObjectEditorDialog = GObject.registerClass( {
                 if ( this.propertyHideElement[i] ) return
                 if ( typeof value === "boolean" ) {
                     this._propertyBoxes[i]._propertyBoxEditorElement = new CheckBox.CheckBox( "" )
-                    this._propertyBoxes[i]._propertyBoxEditorElement.actor.checked = editableObject[key]
-                    this._propertyBoxes[i]._propertyBoxEditorElement.actor.connect( "clicked", () => {editableObject[key] = this._propertyBoxes[i]._propertyBoxEditorElement.actor.checked} )
-                    this._propertyBoxes[i].add_child( this._propertyBoxes[i]._propertyBoxEditorElement.actor )
+                    this._propertyBoxes[i]._propertyBoxEditorElement.set_checked( editableObject[key] )
+                    this._propertyBoxes[i]._propertyBoxEditorElement.connect( "clicked", () => {
+                        editableObject[key] = this._propertyBoxes[i]._propertyBoxEditorElement.get_checked()
+                    } )
+                    this._propertyBoxes[i].add_child( this._propertyBoxes[i]._propertyBoxEditorElement )
                 } else if ( typeof value === "string" || typeof value === "number" ) {
                     this._propertyBoxes[i]._propertyBoxEditorElement = new St.Entry( { style_class: "object-dialog-entry", can_focus: true, text: "", x_align: Clutter.ActorAlign.FILL, x_expand: true} )
                     this._propertyBoxes[i]._propertyBoxEditorElement.get_clutter_text().min_width = 200
@@ -213,34 +215,52 @@ export const ObjectEditorDialog = GObject.registerClass( {
                         this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.set_text( subObjectPropertyDisplayName )
 
                         // Toggling Function
+                        // The CheckBox auto-toggles its own state on "clicked"; we read get_checked()
+                        // for the post-click value rather than flipping it in JS (which double-toggles
+                        // when both the checkbox and a parent press handler fire).
+                        // Some validation callbacks (e.g. bowser's uriOptionsValidation) return the OLD
+                        // value array with adjacent positions modified for chain logic but DO NOT flip
+                        // position [n] themselves — the caller must force [n] to the user's intent.
                         let togglingFunction = function() {
-                            // subObjectToggleValidationCallback will return values to set for any other bool in the subobject and whether to toggle the current one
-                            let [allowed, boolValues] = subObjectToggleValidationCallback.call( this, value, n )
-                            if ( !boolValues ) boolValues = Object.values( value )
-                            if ( allowed ) boolValues[n] = value[subobjectKey] = value[subobjectKey] ? false : true
+                            const newCheckedState = this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.get_checked()
+
+                            let proposedBoolValues = Object.values( value )
+                            proposedBoolValues[n] = newCheckedState
+
+                            let [allowed, validatedBoolValues] = subObjectToggleValidationCallback.call( this, value, n )
+                            let finalBoolValues = validatedBoolValues || proposedBoolValues
+                            // Force [n] regardless of whether the validation cb wrote it; revert if disallowed.
+                            finalBoolValues[n] = allowed ? newCheckedState : value[subobjectKey]
+
                             this._propertyBoxes[i]._boolBox.forEach( function( box, x ) {
-                                if( boolValues[x] ) {
-                                    value[Object.keys( value )[x]] = boolValues[x]
+                                value[Object.keys( value )[x]] = finalBoolValues[x]
+                                if ( finalBoolValues[x] ) {
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.remove_style_class_name( "label-disabled" )
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.add_style_class_name( "label-enabled" )
-                                    this._propertyBoxes[i]._boolBox[x]._boolBoxEditorElement.actor.set_checked( boolValues[x] )
                                 } else {
-                                    value[Object.keys( value )[x]] = boolValues[x]
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.remove_style_class_name( "label-enabled" )
                                     this._propertyBoxes[i]._boolBox[x]._boolBoxMessage.add_style_class_name( "label-disabled" )
-                                    this._propertyBoxes[i]._boolBox[x]._boolBoxEditorElement.actor.set_checked( boolValues[x] )
                                 }
+                                this._propertyBoxes[i]._boolBox[x]._boolBoxEditorElement.set_checked( finalBoolValues[x] )
                             }, this )
                         }
 
                         // Check box
                         this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement = new CheckBox.CheckBox( "" )
                         this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.set_x_align( Clutter.ActorAlign.CENTER )
-                        this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor.checked = value[subobjectKey]
-                        this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor.connect( "clicked", () => { togglingFunction.call( this ) } )
-                        if ( !subObjectHideElement ) this._propertyBoxes[i]._boolBox[n].add_child( this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.actor )
-                        // Toggle when pressing anywhere in the label/checkbox parent BoxLayout
-                        this._propertyBoxes[i]._boolBox[n].connect( "button-press-event", () => { togglingFunction.call( this ) } )
+                        this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.set_checked( value[subobjectKey] )
+                        this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement.connect( "clicked", () => { togglingFunction.call( this ) } )
+                        if ( !subObjectHideElement ) this._propertyBoxes[i]._boolBox[n].add_child( this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement )
+                        // Make the label clickable to toggle the checkbox (without a parent box handler that double-fires).
+                        // emit("clicked") alone only fires the signal; St.Button's toggle state is flipped by the
+                        // press/release path, not by emit(), so we set_checked() explicitly before invoking the handler.
+                        this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.reactive = true
+                        this._propertyBoxes[i]._boolBox[n]._boolBoxMessage.connect( "button-press-event", () => {
+                            const cb = this._propertyBoxes[i]._boolBox[n]._boolBoxEditorElement
+                            cb.set_checked( !cb.get_checked() )
+                            togglingFunction.call( this )
+                            return Clutter.EVENT_STOP
+                        } )
 
                     }, this )
                 } else if ( Array.isArray( value ) ) {

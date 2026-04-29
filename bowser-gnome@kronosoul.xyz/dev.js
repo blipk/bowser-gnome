@@ -57,10 +57,11 @@ export function alwaysLog() {
 }
 
 export function log( ) {
+    // Early return BEFORE the stack-trace build (P3) and before any string/I-O work (P4).
+    // `new Error().stack` is one of the most expensive JS ops in GJS and was running for
+    // every catch block in the codebase regardless of whether logging was on.
+    if ( !( FORCE_LOG || _debug_ ) ) return
     try {
-        const shouldLog = FORCE_LOG || ( Me.session?.activeSession?.Options?.DebugMode ?? true )
-        if ( !shouldLog ) return
-
         const args = [...arguments]
         const stack = ( new Error() ).stack.split( "\n" )
         const caller_stack = stack[2].toString().split( "/" )

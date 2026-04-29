@@ -183,7 +183,7 @@ export function aSyncSaveCallback( obj, res, contents, isAppend = false ) {
     } )
 }
 
-export function loadJSObjectFromFile( filename = BOWSER_CONF_FILE(), directory = CONF_DIR(), callback = null, async = false ) {
+export function loadJSObjectFromFile( filename = "bowser.conf", directory = CONF_DIR(), callback = null, async = false ) {
     directory = directory || CONF_DIR()
     let loadPath = GLib.build_filenamev(
         [directory, filename]
@@ -226,7 +226,7 @@ export function saveJSObjectToFile ( jsobject, filename, directory=CONF_DIR(), a
     let contents = new GLib.Bytes( jsonString )
 
     // Make sure dir exists
-    GLib.mkdir_with_parents( directory, parseInt( "0775", 8 ) )
+    GLib.mkdir_with_parents( directory, parseInt( "0700", 8 ) )
     let file = Gio.file_new_for_path( savePath )
     try{
     if ( async ) {
