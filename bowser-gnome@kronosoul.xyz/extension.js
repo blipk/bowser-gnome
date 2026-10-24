@@ -56,23 +56,35 @@ export default class BowserGnome extends Extension {
             if ( this.bowserIndicator ) return // Already initialized
 
             this.signals = new utils.SignalHandler()
+            // Stops async file and subprocess work when the extension is disabled
+            this._cancellable = new Gio.Cancellable()
+            // Increases on each save, so that loadConfiguration() can ignore reads that are older than the save
+            this._configRevision = 0
 
             this.URIs = Array()
             this.PYBOWSER = false
             this.settings = this.getSettings( this.metadata["settings-schema"] )
 
-            // Check/install status then start watching
-            this._checkBowser()
-            this._enableURIWatcher()
+            // Check/install status and load the configuration, then start watching
+            this._checkBowser( () => {
+                try {
+                    this._enableURIWatcher()
 
-            // Spawn indicator
-            this.bowserIndicator = new panelIndicator.BowserIndicator()
-            Main.panel.addToStatusArea( "BowserIndicator", this.bowserIndicator, 1 )
+                    // Spawn indicator
+                    this.bowserIndicator = new panelIndicator.BowserIndicator()
+                    Main.panel.addToStatusArea( "BowserIndicator", this.bowserIndicator, 1 )
+                } catch ( e ) { dev.log( e ) }
+            } )
         } catch ( e ) { dev.log( e ) }
     }
 
     disable() {
         try {
+            // Stop async work first, so that no callback runs after disable
+            if ( this._cancellable ) {
+                this._cancellable.cancel()
+                this._cancellable = null
+            }
             uiUtils.destroy()
             if ( this.bowserIndicator ) {
                 this.bowserIndicator.destroy()
@@ -89,15 +101,23 @@ export default class BowserGnome extends Extension {
         } catch ( e ) { dev.log( e ) }
     }
 
-    _checkBowser() {
+    /**
+     * Install the Bowser resources and load the configuration.
+     * @param {function(): void} callback - Called when the configuration is loaded
+     */
+    _checkBowser( callback ) {
         try {
             // PYBOWSER must be set before BOWSER_CONF_FILE/BOWSER_CONF_DIR are called,
             // since both branch on it.
             this.PYBOWSER = fileUtils.checkExists( [fileUtils.PYBOWSER_EXEC_FILE] )
             this._installbowser()
             if ( !fileUtils.checkExists( [fileUtils.BOWSER_CONF_FILE()] ) ) this.makeConfiguration()
-            this.loadConfiguration()
-        } catch ( e ) { dev.log( e ) }
+        } catch ( e ) {
+            dev.log( e )
+            callback()
+            return
+        }
+        this.loadConfiguration( callback )
     }
     _installbowser() {
         try {
@@ -113,7 +133,7 @@ export default class BowserGnome extends Extension {
             if ( !fileUtils.checkExists( [fileUtils.DESKTOP_FILE] ) ) {
                 checkLoadResources()
                 fileUtils.installResource( "res/bowser-gnome.desktop", fileUtils.DESKTOP_FILE )
-                GLib.spawn_command_line_sync( "xdg-desktop-menu install " + fileUtils.CONF_DIR() + "/bowser-gnome.desktop --novendor" )
+                utils.spawnAsync( ["xdg-desktop-menu", "install", fileUtils.CONF_DIR() + "/bowser-gnome.desktop", "--novendor"] )
             }
 
             // Set as default and set our URI passing script to executable
@@ -359,27 +379,38 @@ export default class BowserGnome extends Extension {
         }, editable, editables, buttonStyles, dialogStyle, "browser-dialog-content-box" )
     }
 
-    loadConfiguration( configObject = null, filename = "bowser.conf", filedirectory = fileUtils.BOWSER_CONF_DIR() ) {
+    /**
+     * Load the configuration file into this.config without blocking the shell.
+     * If the configuration is saved while the read runs, the read result is ignored, because the saved data is newer.
+     * @param {function(): void} [callback] - Called after the load. Not called if the extension is disabled first.
+     * @param {string} [filename] - Name of the configuration file
+     * @param {string} [filedirectory] - Folder of the configuration file
+     */
+    loadConfiguration( callback = null, filename = "bowser.conf", filedirectory = fileUtils.BOWSER_CONF_DIR() ) {
         try {
-            if ( !configObject ) {
-                configObject = fileUtils.loadJSObjectFromFile( filename, filedirectory )
-                if ( !utils.isEmpty( configObject ) /*&& utils.isEmpty(this.config)*/ ) {
-                    this.config = JSON.parse( JSON.stringify( configObject ) )
-                }
-            } else {
-                if ( utils.isEmpty( configObject ) ) return
-                this.config = JSON.parse( JSON.stringify( configObject ) )
-                return
-            }
+            const revision = this._configRevision
+            fileUtils.loadJSObjectFromFile( filename, filedirectory, ( configObject, error ) => {
+                try {
+                    if ( error ) {
+                        if ( utils.isCancelledError( error ) ) return
+                        dev.log( error )
+                    } else if ( revision === this._configRevision && !utils.isEmpty( configObject ) ) {
+                        this.config = configObject
+                    }
+                    // Fall back: ensure this.config exists so the indicator can build.
+                    if ( utils.isEmpty( this.config ) ) this.makeConfiguration()
+                } catch ( e ) { dev.log( e ) }
+                callback?.()
+            }, this._cancellable )
         } catch ( e ) {
             dev.log( e )
+            callback?.()
         }
-        // Fall back: ensure this.config exists so the indicator can build.
-        if ( utils.isEmpty( this.config ) ) this.makeConfiguration()
     }
     saveConfiguration( filename = "bowser.conf", filedirectory = fileUtils.BOWSER_CONF_DIR() ) {
         try {
             if ( utils.isEmpty( this.config ) ) return
+            this._configRevision++
             let configCopy = JSON.parse( JSON.stringify( this.config ) )
             let timestamp = new Date().toLocaleString().replace( /[^a-zA-Z0-9-. ]/g, "" ).replace( / /g, "" )
             fileUtils.saveJSObjectToFile( configCopy, filename, filedirectory )
@@ -441,7 +472,7 @@ export default class BowserGnome extends Extension {
             }
 
             dev.log( this.config.defaultBrowser )
-            this.saveConfiguration(); this.loadConfiguration()
+            this.saveConfiguration()
             uiUtils.showUserNotification( msg, true )
         } catch ( e ) { dev.log( e ) }
     }
@@ -465,41 +496,50 @@ export default class BowserGnome extends Extension {
         try {
             utils.spawnWithCallback( null, ["/usr/bin/zenity", "--file-selection", "--title=Import Configuration", "--filename=settings.conf"], GLib.get_environ(), 0, null,
                 ( resource ) => {
+                    try {
                     if ( !resource ) return
                     resource = resource.trim()
                     const fileName = GLib.path_get_basename( resource )
                     const filePath = GLib.path_get_dirname( resource )
-                    this.loadConfiguration( null, fileName, filePath )
-                    this.saveConfiguration()
-                    uiUtils.showUserNotification( "Configuration loaded from " + resource, true )
+                    this.loadConfiguration( () => {
+                        this.saveConfiguration()
+                        uiUtils.showUserNotification( "Configuration loaded from " + resource, true )
+                    }, fileName, filePath )
+                    } catch ( e ) { dev.log( e ) }
                 } )
         } catch ( e ) { dev.log( e ) }
     }
     enableBowser() {
         try {
             // Verify integrity before granting +x to avoid trusting a tampered bowser.js
-            const chmodCheck = InputValidator.ensureBowserExecutable()
-            if ( chmodCheck.error ) {
-                uiUtils.showUserNotification( "Cannot enable Bowser: " + chmodCheck.error )
-                return
-            }
-            if ( chmodCheck.needsChmod ) util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
+            InputValidator.ensureBowserExecutable( ( chmodCheck ) => {
+                try {
+                    if ( chmodCheck.error ) {
+                        uiUtils.showUserNotification( "Cannot enable Bowser: " + chmodCheck.error )
+                        return
+                    }
+                    if ( chmodCheck.needsChmod ) util.spawn( ["chmod", "+x", fileUtils.BOWSER_EXEC_FILE] )
 
-            let result = this.setxdgDefaultBrowser()
-            let msg = "Bowser has been Enabled"
-            if ( result != "" ) msg = "Error Enabling Bowser: " + result
-            uiUtils.showUserNotification( msg )
+                    this.setxdgDefaultBrowser( "bowser-gnome.desktop", ( result ) => {
+                        let msg = "Bowser has been Enabled"
+                        if ( result != "" ) msg = "Error Enabling Bowser: " + result
+                        uiUtils.showUserNotification( msg )
+                    } )
+                } catch ( e ) { dev.log( e ) }
+            }, this._cancellable )
         } catch ( e ) { dev.log( e ) }
     }
     disableBowser() {
         try {
             let browser = this.config.defaultBrowser
             browser = browser.substring( browser.lastIndexOf( "/" ) + 1, browser.length )
-            let result = this.setxdgDefaultBrowser( browser )
-
-            let msg = this.config.browserApps[this.config.defaultBrowser][0] + " is now your default browser."
-            if ( result != "" ) msg = "Error Disabling Bowser: " + result
-            uiUtils.showUserNotification( msg )
+            this.setxdgDefaultBrowser( browser, ( result ) => {
+                try {
+                    let msg = this.config.browserApps[this.config.defaultBrowser][0] + " is now your default browser."
+                    if ( result != "" ) msg = "Error Disabling Bowser: " + result
+                    uiUtils.showUserNotification( msg )
+                } catch ( e ) { dev.log( e ) }
+            } )
         } catch ( e ) { dev.log( e ) }
     }
     openBowser() {
@@ -507,20 +547,36 @@ export default class BowserGnome extends Extension {
             util.spawn( ["python3", fileUtils.PYBOWSER_EXEC_FILE] )
         } catch ( e ) { dev.log( e ) }
     }
+    /**
+     * Get the desktop file ID of the default web browser.
+     * On GNOME, "xdg-settings get default-web-browser" reads the x-scheme-handler/http default.
+     * This does the same lookup with Gio, so that no subprocess blocks the shell.
+     * @returns {string} The desktop file ID, for example "firefox.desktop", or "" if there is no default
+     */
     getxdgDefaultBrowser() {
         try {
-            let output = new TextDecoder().decode( GLib.spawn_command_line_sync( "xdg-settings get default-web-browser" )[1] ).trim()
+            const appInfo = Gio.AppInfo.get_default_for_uri_scheme( "http" )
+            const output = appInfo?.get_id() ?? ""
             if ( output.search( ".desktop" ) != -1 ) this.currentBrowser = output
             return output
-        } catch ( e ) { dev.log( e ) }
+        } catch ( e ) {
+            dev.log( e )
+            return ""
+        }
     }
-    setxdgDefaultBrowser( browser = "bowser-gnome.desktop" ) {
-        try {
-            let success = false
-            let output = new TextDecoder().decode( GLib.spawn_command_line_sync( "xdg-settings set default-web-browser " + browser )[1] ).trim()
-            if ( output == "" ) success = true
-            return output
-        } catch ( e ) { dev.log( e ) }
+    /**
+     * Set the default web browser with xdg-settings, without blocking the shell.
+     * @param {string} [browser] - Desktop file ID of the browser
+     * @param {function(string): void} [callback] - Gets "" on success, or the error text.
+     *     Not called if the extension is disabled first.
+     */
+    setxdgDefaultBrowser( browser = "bowser-gnome.desktop", callback = null ) {
+        utils.spawnAsync( ["xdg-settings", "set", "default-web-browser", browser], ( success, stdout, stderr ) => {
+            // xdg-settings writes errors to stderr and exits with a failure status
+            let result = ""
+            if ( !success || stdout != "" ) result = stdout || stderr || "xdg-settings failed"
+            callback?.( result )
+        }, this._cancellable )
     }
 
 }

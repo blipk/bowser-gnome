@@ -27,7 +27,6 @@
 import * as Main from "resource:///org/gnome/shell/ui/main.js"
 import * as popupMenu from "resource:///org/gnome/shell/ui/popupMenu.js"
 import * as panelMenu from "resource:///org/gnome/shell/ui/panelMenu.js"
-import * as boxpointer from "resource:///org/gnome/shell/ui/boxpointer.js"
 import GObject from "gi://GObject"
 import St from "gi://St"
 import Clutter from "gi://Clutter"
@@ -82,7 +81,18 @@ export const BowserIndicator = GObject.registerClass( {
     }
     _onOpenStateChanged( menu, open ) {/*Override from parent class to handle menuitem refresh*/
         this._refreshMenu()
+        if ( open ) this._reloadConfiguration()
         super._onOpenStateChanged( menu, open )
+    }
+    /**
+     * Read the configuration file again without blocking the shell.
+     * Refresh the menu if the file was changed outside of the extension, for example by the Bowser app.
+     */
+    _reloadConfiguration() {
+        const previousConfig = JSON.stringify( Me.config )
+        Me.loadConfiguration( () => {
+            if ( JSON.stringify( Me.config ) !== previousConfig ) this._refreshMenu()
+        } )
     }
     //main UI builder
     _buildMenu() {
@@ -140,13 +150,12 @@ export const BowserIndicator = GObject.registerClass( {
     _refreshMenu() {
         try {
             //Remove all and re-add with any changes
+            // The configuration in memory is current. _reloadConfiguration() gets changes made outside the extension.
             if ( utils.isEmpty( Me.config ) ) return
-            Me.loadConfiguration()
             this._prefMenuItemsRemoveAll()
             utils.forEachEntry( Me.config.uriPrefs, function ( prefBufferKey, prefBufferValue, i, prefBufferEntryObj ) {
                 this._addprefMenuItemEntry( prefBufferEntryObj )
             }, this )
-            Me.saveConfiguration()
 
             //Refresh state switches
             // Suppress toggle handlers while syncing UI state to config; setToggleState
@@ -269,7 +278,7 @@ export const BowserIndicator = GObject.registerClass( {
         this.detectWebBrowserMenuButton = new popupMenu.PopupImageMenuItem( _( "Scan Installed Browsers" ), "bowser" )
         this.detectWebBrowserMenuButton.connect( "activate", () => {
             Me.detectWebBrowsers()
-            this.menu.itemActivated( boxpointer.PopupAnimation.NONE )
+            this.menu.itemActivated( uiUtils.getPopupNoAnimationParams() )
         } )
         this.detectWebBrowserMenuButton.setOrnament( popupMenu.Ornament.DOT )
         //uiUtils.createIconButton(this.detectWebBrowserMenuButton , 'web-browser-sybmolic', () => {});

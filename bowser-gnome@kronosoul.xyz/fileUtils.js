@@ -183,41 +183,30 @@ export function aSyncSaveCallback( obj, res, contents, isAppend = false ) {
     } )
 }
 
-export function loadJSObjectFromFile( filename = "bowser.conf", directory = CONF_DIR(), callback = null, async = false ) {
+/**
+ * Read a JSON file into a JS object without blocking the shell.
+ * @param {string} filename - Name of the file
+ * @param {string} directory - Folder that holds the file
+ * @param {function(object|null, Error|null): void} callback - Gets the object, or the error if the read or parse fails
+ * @param {Gio.Cancellable|null} [cancellable] - Stops the read
+ */
+export function loadJSObjectFromFile( filename = "bowser.conf", directory = CONF_DIR(), callback = null, cancellable = null ) {
+    if ( typeof callback !== "function" ) throw TypeError( "loadJSObjectFromFile callback must be a function" )
     directory = directory || CONF_DIR()
-    let loadPath = GLib.build_filenamev(
-        [directory, filename]
-    )
-    let jsobject
+    const loadPath = GLib.build_filenamev( [directory, filename] )
+    const file = Gio.file_new_for_path( loadPath )
 
-    let file = Gio.file_new_for_path( loadPath )
-
-    if ( !file.query_exists( null ) ) { throw Error( "File does not exist: " + loadPath ) }
-    if ( async === true ) {
-        if ( typeof callback !== "function" ) { throw TypeError( "loadJSObjectFromFile callback must be a function" ) }
-
-        file.query_info_async( "*", Gio.FileQueryInfoFlags.NONE, GLib.PRIORITY_DEFAULT, null, function ( src, res ) {
-            // const file_info = src.query_info_finish( res )
-            file.load_contents_async( null, function ( obj, res ) {
-                let [
-                    success, contents
-                ] = obj.load_contents_finish( res )
-                if ( success ) {
-                    jsobject = JSON.parse( new TextDecoder().decode( contents ) )
-                    if ( jsobject === undefined ) { throw SyntaxError( "Error parseing file contents to JS Object. Syntax Error?" ) }
-                    callback( jsobject )
-                }
-            } )
-        } )
-    } else {
-        //let buffer = file.load_contents(null, null, null);
-        let buffer = file.load_contents( null )
-        let contents = buffer[1]
-        jsobject = JSON.parse( new TextDecoder().decode( contents ) )
-        if ( jsobject === undefined ) { throw SyntaxError( "Error parseing file contents to JS Object. Syntax Error." ) }
-    }
-
-    return jsobject
+    file.load_contents_async( cancellable, ( source, result ) => {
+        let jsobject
+        try {
+            const [, contents] = source.load_contents_finish( result )
+            jsobject = JSON.parse( new TextDecoder().decode( contents ) )
+        } catch ( e ) {
+            callback( null, e )
+            return
+        }
+        callback( jsobject, null )
+    } )
 }
 
 export function saveJSObjectToFile ( jsobject, filename, directory=CONF_DIR(), append=false, async=false ) {

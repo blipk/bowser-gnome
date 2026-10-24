@@ -201,7 +201,8 @@ export const ObjectEditorDialog = GObject.registerClass( {
                         if ( subObjectPropertyHidden ) return
 
                         // Vertical box area for each subobject property
-                        this._propertyBoxes[i]._boolBox[n] = new St.BoxLayout( { vertical    : true, reactive    : true,
+                        // GNOME 51 removed the St "vertical" property. "orientation" is available from GNOME 48.
+                        this._propertyBoxes[i]._boolBox[n] = new St.BoxLayout( { orientation : Clutter.Orientation.VERTICAL, reactive    : true,
                             track_hover : true, x_expand    : true, y_expand    : true, x_align     : Clutter.ActorAlign.FILL, y_align     : Clutter.ActorAlign.FILL} )
                         this._propertyBoxes[i].add_child( this._propertyBoxes[i]._boolBox[n] )
 

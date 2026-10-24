@@ -151,6 +151,48 @@ export function readStream( stream, callback ) {
     } )
 }
 
+/**
+ * Check if an error comes from a cancelled Gio operation.
+ * @param {Error} error - The error to check
+ * @returns {boolean} True if the operation was cancelled
+ */
+export function isCancelledError( error ) {
+    return error instanceof GLib.Error && error.matches( Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED )
+}
+
+/**
+ * Run a command without blocking the shell, and get its output when it stops.
+ * The callback is not called if the cancellable is cancelled.
+ * @param {string[]} argv - The command and its arguments
+ * @param {function(boolean, string, string): void} [callback] - Gets the success status, stdout and stderr
+ * @param {Gio.Cancellable|null} [cancellable] - Stops the wait for the output
+ */
+export function spawnAsync( argv, callback = null, cancellable = null ) {
+    let proc
+    try {
+        proc = Gio.Subprocess.new( argv, Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE )
+    } catch ( e ) {
+        dev.log( e )
+        callback?.( false, "", e.message )
+        return
+    }
+
+    proc.communicate_utf8_async( null, cancellable, ( source, result ) => {
+        let success = false
+        let stdout = ""
+        let stderr = ""
+        try {
+            [, stdout, stderr] = source.communicate_utf8_finish( result )
+            success = source.get_successful()
+        } catch ( e ) {
+            if ( isCancelledError( e ) ) return
+            dev.log( e )
+            stderr = e.message
+        }
+        callback?.( success, ( stdout ?? "" ).trim(), ( stderr ?? "" ).trim() )
+    } )
+}
+
 // these imports are required for the eval() usage in InjectionHandler.add()
 import * as workspace from "resource:///org/gnome/shell/ui/workspace.js"
 import * as workspaceAnimation from "resource:///org/gnome/shell/ui/workspaceAnimation.js"

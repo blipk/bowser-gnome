@@ -35,6 +35,8 @@ import GdkPixbuf from "gi://GdkPixbuf"
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js"
 import * as popupMenu from "resource:///org/gnome/shell/ui/popupMenu.js"
+import * as boxpointer from "resource:///org/gnome/shell/ui/boxpointer.js"
+import * as Config from "resource:///org/gnome/shell/misc/config.js"
 
 // Internal imports
 import * as dev from "./dev.js"
@@ -42,6 +44,21 @@ import * as dev from "./dev.js"
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js"
 
 import { BowserGnomeInstance as Me } from "./extension.js"
+
+// Major version of the running GNOME Shell, for example 51 from "51.1"
+const SHELL_MAJOR_VERSION = parseInt( Config.PACKAGE_VERSION.split( "." )[0], 10 )
+// From this version, PopupMenu open(), close() and itemActivated() use a params object, not a PopupAnimation value
+const POPUP_PARAMS_SHELL_VERSION = 51
+
+/**
+ * Get the argument that opens or closes a PopupMenu without animation.
+ * GNOME Shell 48-50 use a PopupAnimation value. GNOME Shell 51 and later use a params object.
+ * @returns {{animate: boolean}|number} Argument for PopupMenu open(), close() or itemActivated()
+ */
+export function getPopupNoAnimationParams() {
+    if ( SHELL_MAJOR_VERSION >= POPUP_PARAMS_SHELL_VERSION ) return { animate: false }
+    return boxpointer.PopupAnimation.NONE
+}
 
 
 export function destroy() {

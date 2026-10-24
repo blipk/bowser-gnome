@@ -35,7 +35,7 @@ When creating or editing rules, you can choose which part/s of a web address to 
 
 ### Support
 
-This has only been thoroughly tested on Gnome Shell version 3.36, although it should work on any version from 3.00 to 3.36.
+This extension supports GNOME Shell versions 48, 49, 50 and 51. The supported versions are set in [metadata.json](bowser-gnome@kronosoul.xyz/metadata.json).
 
 ### Licence
 
